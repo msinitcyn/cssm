@@ -1,6 +1,6 @@
-import botocore
 # aws_scanner/scanners/s3_scanner.py
 
+import botocore
 import boto3
 import json
 
