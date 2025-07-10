@@ -2,6 +2,7 @@ import json
 from pathlib import Path
 from scanners.s3_scanner import find_public_s3_buckets
 from scanners.iam_scanner import find_overpermissive_roles
+from scanners.sg_scanner import find_open_security_groups
 
 def main():
     print("Scanning S3 buckets for public access...\n")
@@ -21,7 +22,6 @@ def main():
 
     for item in iam_results:
         role = item.get("role", "<unknown>")
-        issue = item.get("issue")
         error = item.get("error")
         policy_type = item.get("policy_type", "")
         policy_name = item.get("policy_name", "")
@@ -30,10 +30,25 @@ def main():
         else:
             print(f"{role}: {policy_type} policy '{policy_name}' is over-permissive")
 
+    print("\nScanning security groups for open ports...\n")
+    sg_results = find_open_security_groups()
+
+    for item in sg_results:
+        if "error" in item:
+            print(f"Security group scan error: {item['error']}")
+            continue
+
+        group_id = item.get("group_id", "<unknown>")
+        group_name = item.get("group_name", "")
+        from_port = item.get("from_port")
+        cidr = item.get("cidr")
+        print(f"{group_id} ({group_name}): Port {from_port} open to {cidr}")
+
     # Save combined results
     output = {
         "s3_public_buckets": s3_results,
         "overpermissive_iam_roles": iam_results,
+        "sg_open_ports": sg_results,
     }
 
     output_dir = Path("output")

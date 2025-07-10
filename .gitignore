@@ -21,3 +21,4 @@ credentials
 .DS_Store
 
 output/
+.qodo
