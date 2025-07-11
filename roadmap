@@ -3,7 +3,7 @@ Tier 1: MVP+
 ├── [x] logging + critical error
 ├── [x] --output path
 ├── [x] SG: IPv6 / port ranges
-└── [ ] S3: advanced policy checks
+└── [x] S3: advanced policy checks
 
 Tier 2: DevOps
 ├── [ ] Dockerfile
