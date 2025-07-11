@@ -2,7 +2,7 @@ Tier 1: MVP+
 ├── [x] argparse CLI
 ├── [x] logging + critical error
 ├── [x] --output path
-├── [ ] SG: IPv6 / port ranges
+├── [x] SG: IPv6 / port ranges
 └── [ ] S3: advanced policy checks
 
 Tier 2: DevOps
