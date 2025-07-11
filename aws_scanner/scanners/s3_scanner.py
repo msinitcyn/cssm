@@ -1,89 +1,126 @@
-# aws_scanner/scanners/s3_scanner.py
-
-import botocore
 import boto3
+import botocore
 import json
 
 ALL_USERS_URI = 'http://acs.amazonaws.com/groups/global/AllUsers'
 
-def check_public_access_block(s3, bucket_name):
+
+def get_public_access_block_config(s3, bucket_name):
     try:
-        pab = s3.get_public_access_block(Bucket=bucket_name)
-        config = pab.get('PublicAccessBlockConfiguration', {})
-        if any([
-            config.get('BlockPublicAcls'),
-            config.get('IgnorePublicAcls'),
-            config.get('BlockPublicPolicy'),
-            config.get('RestrictPublicBuckets')
-        ]):
-            return False
+        resp = s3.get_public_access_block(Bucket=bucket_name)
+        return resp.get("PublicAccessBlockConfiguration", {})
     except botocore.exceptions.ClientError as e:
-        error_code = e.response.get('Error', {}).get('Code')
-        if error_code != 'NoSuchPublicAccessBlock':
-            return False
-    return None  # None means no block, continue checking
+        if e.response.get("Error", {}).get("Code") == "NoSuchPublicAccessBlock":
+            return {}  # no block config = everything allowed
+        else:
+            raise
+
+
+def analyze_pab_flags(pab):
+    block_acls = pab.get("BlockPublicAcls", False)
+    ignore_acls = pab.get("IgnorePublicAcls", False)
+    block_policy = pab.get("BlockPublicPolicy", False)
+    restrict_policy = pab.get("RestrictPublicBuckets", False)
+
+    can_use_acl = not ignore_acls
+    can_use_policy = not (block_policy and restrict_policy)
+
+    if can_use_acl and can_use_policy:
+        group = "ACL+Policy"
+    elif can_use_acl:
+        group = "ACL-only"
+    elif can_use_policy:
+        group = "Policy-only"
+    else:
+        group = "Blocked"
+
+    return {
+        "can_use_acl": can_use_acl,
+        "can_use_policy": can_use_policy,
+        "group": group
+    }
+
 
 def check_bucket_acl(s3, bucket_name):
     try:
         acl = s3.get_bucket_acl(Bucket=bucket_name)
-        for grant in acl.get('Grants', []):
-            grantee = grant.get('Grantee', {})
-            if grantee.get('URI') == ALL_USERS_URI:
+        for grant in acl.get("Grants", []):
+            grantee = grant.get("Grantee", {})
+            if grantee.get("URI") == ALL_USERS_URI:
                 return True
     except botocore.exceptions.ClientError as e:
-        error_code = e.response.get('Error', {}).get('Code')
-        if error_code in ('NoSuchBucket', 'NoSuchBucketAcl'):
-            pass  # treat as not public
+        if e.response.get("Error", {}).get("Code") in ("NoSuchBucket", "NoSuchBucketAcl"):
+            pass  # ignore
         else:
             raise
     return False
 
+
 def check_bucket_policy(s3, bucket_name):
     try:
-        policy_str = s3.get_bucket_policy(Bucket=bucket_name)['Policy']
+        policy_str = s3.get_bucket_policy(Bucket=bucket_name)["Policy"]
         policy = json.loads(policy_str)
-        for statement in policy.get('Statement', []):
-            if (
-                statement.get('Effect') == 'Allow' and
-                (
-                    statement.get('Principal') == '*' or
-                    statement.get('Principal') == {'AWS': '*'}
-                ) and
-                (
-                    's3:GetObject' in statement.get('Action', []) or
-                    's3:*' in statement.get('Action', []) or
-                    (isinstance(statement.get('Action', []), list) and
-                     ('s3:GetObject' in statement['Action'] or 's3:*' in statement['Action']))
-                )
-            ):
-                return True
+
+        for stmt in policy.get("Statement", []):
+            if stmt.get("Effect") != "Allow":
+                continue
+
+            principal = stmt.get("Principal")
+            if principal != "*" and principal != {"AWS": "*"}:
+                continue
+
+            action = stmt.get("Action", [])
+            if isinstance(action, str):
+                action = [action]
+
+            if not any(a in action for a in ["s3:GetObject", "s3:*"]):
+                continue
+
+            if stmt.get("Condition"):
+                return {"potentially_public": True, "reason": "has condition"}
+
+            return {"public": True}
+
     except botocore.exceptions.ClientError:
         pass
-    return False
+    return {}
+
 
 def is_bucket_public(s3, bucket_name):
-    pab_result = check_public_access_block(s3, bucket_name)
-    if pab_result is False:
-        return False
-    if check_bucket_acl(s3, bucket_name):
-        return True
-    if check_bucket_policy(s3, bucket_name):
-        return True
-    return False
+    pab = get_public_access_block_config(s3, bucket_name)
+    perms = analyze_pab_flags(pab)
+
+    if perms["can_use_acl"]:
+        if check_bucket_acl(s3, bucket_name):
+            return {"public": True, "access_vector": "ACL", "group": perms["group"]}
+
+    if perms["can_use_policy"]:
+        policy_result = check_bucket_policy(s3, bucket_name)
+        if policy_result.get("public"):
+            return {"public": True, "access_vector": "Policy", "group": perms["group"]}
+        if policy_result.get("potentially_public"):
+            return {"potentially_public": True, "reason": policy_result["reason"], "access_vector": "Policy", "group": perms["group"]}
+
+    return {"public": False, "group": perms["group"]}
+
 
 def find_public_s3_buckets(s3=None):
     if s3 is None:
-        s3 = boto3.client('s3')
-    result = []
+        s3 = boto3.client("s3")
 
-    paginator = s3.get_paginator('list_buckets')
-    for page in paginator.paginate():
-        for bucket in page['Buckets']:
-            bucket_name = bucket['Name']
-            try:
-                public = is_bucket_public(s3, bucket_name)
-                result.append({'bucket': bucket_name, 'public': public})
-            except botocore.exceptions.ClientError as e:
-                result.append({'bucket': bucket_name, 'error': str(e)})
+    results = []
+    try:
+        buckets = s3.list_buckets()["Buckets"]
+    except botocore.exceptions.ClientError as e:
+        return [{"bucket": "<list_error>", "error": str(e)}]
 
-    return result
+    for bucket in buckets:
+        name = bucket["Name"]
+        try:
+            pub = is_bucket_public(s3, name)
+            pub["bucket"] = name
+            results.append(pub)
+        except botocore.exceptions.ClientError as e:
+            results.append({"bucket": name, "error": str(e)})
+
+    return results
