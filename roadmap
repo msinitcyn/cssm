@@ -1,0 +1,29 @@
+Tier 1: MVP+
+├── [x] argparse CLI
+├── [x] logging + critical error
+├── [x] --output path
+├── [ ] SG: IPv6 / port ranges
+└── [ ] S3: advanced policy checks
+
+Tier 2: DevOps
+├── [ ] Dockerfile
+├── [ ] GitHub Actions CI
+├── [ ] Telegram alerts
+└── [ ] .env / AWS_PROFILE
+
+Tier 3: Deep logic
+├── [ ] IAM: NotAction/Condition
+├── [ ] multi-region (sg scanner)
+├── [ ] SG: cross-account pairs
+└── [ ] S3: CORS, website, bucket policies
+
+Tier 4: Extensions
+├── [ ] CLI-extracted analyzer
+├── [ ] GitHub bot
+├── [ ] VSCode extension
+└── [ ] SaaS interface
+
+Tier 5: AI layer
+├── [ ] AI: IAM policy builder
+├── [ ] AI: Annotator
+└── [ ] AI: PR comment assistant
