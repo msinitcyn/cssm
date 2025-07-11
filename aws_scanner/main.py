@@ -87,6 +87,8 @@ def main():
     group.add_argument('--sg-only', action='store_true', help='Scan only security groups')
     group.add_argument('--all', action='store_true', help='Scan everything (default)')
 
+    parser.add_argument('--output', type=str, help='Path to save the JSON report (default: output/report.json)')
+
     args = parser.parse_args()
     output = {}
 
@@ -101,9 +103,9 @@ def main():
         output["overpermissive_iam_roles"] = scan_iam()
         output["sg_open_ports"] = scan_sg()
 
-    output_dir = Path("output")
-    output_dir.mkdir(exist_ok=True)
-    report_path = output_dir / "report.json"
+    # Determine report path
+    report_path = Path(args.output) if args.output else Path("output/report.json")
+    report_path.parent.mkdir(parents=True, exist_ok=True)
 
     with report_path.open("w") as f:
         json.dump(output, f, indent=2)
