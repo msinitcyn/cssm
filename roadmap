@@ -7,7 +7,7 @@ Tier 1: MVP+
 
 Tier 2: DevOps
 ├── [x] .env / AWS_PROFILE
-├── [ ] Dockerfile
+├── [x] Dockerfile
 └── [ ] GitHub Actions CI
 
 Tier 3: Deep logic
