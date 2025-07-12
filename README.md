@@ -1,4 +1,4 @@
-# Cloud Misconfiguration Scanner (CSSM)
+# Cloud Security Scanner for Misconfigurations (CSSM)
 
 CSSM is a tool for identifying common security misconfigurations in AWS cloud environments.
 
