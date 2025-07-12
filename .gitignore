@@ -22,3 +22,5 @@ credentials
 
 output/
 .qodo
+
+.env

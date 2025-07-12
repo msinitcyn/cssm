@@ -1,9 +1,14 @@
+import os
+import sys
 import json
 import argparse
 import logging
-import sys
 from pathlib import Path
 import botocore.exceptions
+from dotenv import load_dotenv
+
+ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(dotenv_path=ROOT / ".env")
 
 from .scanners.s3_scanner import find_public_s3_buckets
 from .scanners.iam_scanner import find_overpermissive_roles
@@ -30,7 +35,9 @@ def scan_s3():
         if item.get("error"):
             logging.warning(f"{bucket}: ERROR — {item['error']}")
         elif item.get("public"):
-            logging.warning(f"{bucket} is PUBLIC")
+            logging.warning(f"{bucket} is PUBLIC via {item.get('access_vector')}")
+        elif item.get("potentially_public"):
+            logging.warning(f"{bucket} is POTENTIALLY public: {item.get('reason')}")
         else:
             logging.info(f"{bucket} is private")
     return results
@@ -87,7 +94,7 @@ def main():
     group.add_argument('--sg-only', action='store_true', help='Scan only security groups')
     group.add_argument('--all', action='store_true', help='Scan everything (default)')
 
-    parser.add_argument('--output', type=str, help='Path to save the JSON report (default: output/report.json)')
+    parser.add_argument('--output', type=Path, default=Path("output/report.json"), help='Path to save JSON report')
 
     args = parser.parse_args()
     output = {}
@@ -103,14 +110,11 @@ def main():
         output["overpermissive_iam_roles"] = scan_iam()
         output["sg_open_ports"] = scan_sg()
 
-    # Determine report path
-    report_path = Path(args.output) if args.output else Path("output/report.json")
-    report_path.parent.mkdir(parents=True, exist_ok=True)
-
-    with report_path.open("w") as f:
+    args.output.parent.mkdir(parents=True, exist_ok=True)
+    with args.output.open("w") as f:
         json.dump(output, f, indent=2)
 
-    logging.info(f"Report saved to {report_path.resolve()}")
+    logging.info(f"Report saved to {args.output.resolve()}")
 
 if __name__ == "__main__":
     main()

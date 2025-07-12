@@ -6,10 +6,9 @@ Tier 1: MVP+
 └── [x] S3: advanced policy checks
 
 Tier 2: DevOps
+├── [x] .env / AWS_PROFILE
 ├── [ ] Dockerfile
-├── [ ] GitHub Actions CI
-├── [ ] Telegram alerts
-└── [ ] .env / AWS_PROFILE
+└── [ ] GitHub Actions CI
 
 Tier 3: Deep logic
 ├── [ ] IAM: NotAction/Condition
@@ -21,7 +20,8 @@ Tier 4: Extensions
 ├── [ ] CLI-extracted analyzer
 ├── [ ] GitHub bot
 ├── [ ] VSCode extension
-└── [ ] SaaS interface
+├── [ ] SaaS interface
+└── [ ] Telegram alerts
 
 Tier 5: AI layer
 ├── [ ] AI: IAM policy builder
