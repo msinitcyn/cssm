@@ -11,7 +11,7 @@ Milestone 2: DevOps basics
 [x] GitHub Actions CI (pytest, Docker build)
 
 Milestone 3: Risk model improvements
-[ ] Risk level scoring
+[x] Risk level scoring
 [ ] Multiple access vectors
 [ ] HTML summary report
 
