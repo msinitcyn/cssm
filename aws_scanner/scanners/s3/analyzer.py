@@ -1,23 +1,7 @@
 ALL_USERS_URI = 'http://acs.amazonaws.com/groups/global/AllUsers'
 
-def score_risk(report, bucket_data):
-    if report.get("public"):
-        cors = bucket_data.cors_config or {}
-        cors_rules = cors.get("CORSRules", [])
-        for rule in cors_rules:
-            if "*" in rule.get("AllowedOrigins", []):
-                return "high"
-        return "medium"
-    elif report.get("potentially_public"):
-        return "low"
-    return "low"
 
-def analyze_s3_bucket(bucket_data):
-    pab = bucket_data.pab_config
-    policy = bucket_data.policy_doc or {}
-    acl = bucket_data.acl_grants or []
-
-    block_acls = pab.get("BlockPublicAcls", False)
+def classify_bucket_group(pab):
     ignore_acls = pab.get("IgnorePublicAcls", False)
     block_policy = pab.get("BlockPublicPolicy", False)
     restrict_policy = pab.get("RestrictPublicBuckets", False)
@@ -26,21 +10,37 @@ def analyze_s3_bucket(bucket_data):
     can_use_policy = not (block_policy and restrict_policy)
 
     if can_use_acl and can_use_policy:
-        group = "ACL+Policy"
+        return "ACL+Policy"
     elif can_use_acl:
-        group = "ACL-only"
+        return "ACL-only"
     elif can_use_policy:
-        group = "Policy-only"
+        return "Policy-only"
     else:
-        group = "Blocked"
+        return "Blocked"
 
-    is_public_acl = any(
+
+def analyze_acl(bucket_data):
+    pab = bucket_data.pab_config
+    if pab.get("IgnorePublicAcls", False):
+        return False
+    acl = bucket_data.acl_grants or []
+    return any(
         grant.get("Grantee", {}).get("URI") == ALL_USERS_URI
         for grant in acl
-    ) if can_use_acl else False
+    )
 
+
+def analyze_policy(bucket_data):
+    pab = bucket_data.pab_config
+    block_policy = pab.get("BlockPublicPolicy", False)
+    restrict_policy = pab.get("RestrictPublicBuckets", False)
+    if block_policy and restrict_policy:
+        return False, False
+
+    policy = bucket_data.policy_doc or {}
     is_public_policy = False
     condition_present = False
+
     for stmt in policy.get("Statement", []):
         if stmt.get("Effect") != "Allow":
             continue
@@ -50,26 +50,65 @@ def analyze_s3_bucket(bucket_data):
         action = stmt.get("Action")
         if isinstance(action, str):
             action = [action]
-        if any(a in action for a in ("s3:GetObject", "s3:*")):
-            if stmt.get("Condition"):
-                condition_present = True
-            else:
-                is_public_policy = True
+        if not any(a in action for a in ("s3:GetObject", "s3:*")):
+            continue
+        if stmt.get("Condition"):
+            condition_present = True
+        else:
+            is_public_policy = True
+
+    return is_public_policy, condition_present
+
+
+def get_access_vectors(is_acl, is_policy, bucket_data):
+    vectors = []
+    if is_acl:
+        vectors.append("ACL")
+    if is_policy:
+        vectors.append("Policy")
+    if vectors:
+        if bucket_data.cors_config:
+            vectors.append("CORS")
+        if bucket_data.website_config:
+            vectors.append("Website")
+    return vectors
+
+
+def score_risk(report, bucket_data):
+    if report.get("public"):
+        cors = bucket_data.cors_config or {}
+        cors_rules = cors.get("CORSRules", [])
+        for rule in cors_rules:
+            if "*" in rule.get("AllowedOrigins", []):
+                return "high"
+        if bucket_data.website_config:
+            return "medium"
+        return "medium"
+    elif report.get("potentially_public"):
+        return "low"
+    return "low"
+
+
+def analyze_s3_bucket(bucket_data):
+    group = classify_bucket_group(bucket_data.pab_config)
+    is_acl = analyze_acl(bucket_data)
+    is_policy, has_condition = analyze_policy(bucket_data)
+    vectors = get_access_vectors(is_acl, is_policy, bucket_data)
 
     result = {
         "bucket": bucket_data.name,
         "group": group,
-        "access_vector": None,
-        "public": False,
+        "access_vector": vectors if vectors else None,
+        "public": bool(vectors),
         "risk": "low"
     }
 
-    if is_public_acl:
-        result.update({"public": True, "access_vector": "ACL"})
-    elif is_public_policy:
-        result.update({"public": True, "access_vector": "Policy"})
-    elif condition_present:
-        result.update({"potentially_public": True, "access_vector": "Policy", "reason": "Condition present"})
+    if not vectors and has_condition:
+        result.update({
+            "potentially_public": True,
+            "access_vector": ["Policy"],
+            "reason": "Condition present"
+        })
 
     result["risk"] = score_risk(result, bucket_data)
     return result
