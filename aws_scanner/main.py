@@ -5,9 +5,9 @@ import sys
 from pathlib import Path
 import botocore.exceptions
 
-from scanners.s3_scanner import find_public_s3_buckets
-from scanners.iam_scanner import find_overpermissive_roles
-from scanners.sg_scanner import find_open_security_groups
+from .scanners.s3_scanner import find_public_s3_buckets
+from .scanners.iam_scanner import find_overpermissive_roles
+from .scanners.sg_scanner import find_open_security_groups
 
 logging.basicConfig(
     level=logging.INFO,
