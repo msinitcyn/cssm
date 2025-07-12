@@ -4,15 +4,17 @@ import json
 import argparse
 import logging
 from pathlib import Path
+
 import botocore.exceptions
 from dotenv import load_dotenv
-
-ROOT = Path(__file__).resolve().parents[1]
-load_dotenv(dotenv_path=ROOT / ".env")
 
 from .scanners.s3_scanner import find_public_s3_buckets
 from .scanners.iam_scanner import find_overpermissive_roles
 from .scanners.sg_scanner import find_open_security_groups
+from .reports.html_report import generate_html_report
+
+ROOT = Path(__file__).resolve().parents[1]
+load_dotenv(dotenv_path=ROOT / ".env")
 
 logging.basicConfig(
     level=logging.INFO,
@@ -95,6 +97,7 @@ def main():
     group.add_argument('--all', action='store_true', help='Scan everything (default)')
 
     parser.add_argument('--output', type=Path, default=Path("output/report.json"), help='Path to save JSON report')
+    parser.add_argument('--html', action='store_true', help='Also generate HTML summary report')
 
     args = parser.parse_args()
     output = {}
@@ -113,8 +116,10 @@ def main():
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w") as f:
         json.dump(output, f, indent=2)
-
     logging.info(f"Report saved to {args.output.resolve()}")
+
+    if args.html:
+        generate_html_report(output, args.output)
 
 if __name__ == "__main__":
     main()
