@@ -16,7 +16,7 @@ Milestone 3: Risk model improvements
 [x] HTML summary report
 
 Milestone 4: IAM logic depth
-[ ] Support for NotAction / NotResource
+[x] Support for NotAction / NotResource
 [ ] Detect Condition blocks
 [ ] Flag broad AssumeRole permissions
 
