@@ -1,7 +1,15 @@
-from typing import List, Dict, Any
-from .iam_policy_data import IamPolicyData
+# aws_scanner/scanners/iam/policy_analyzer.py
 
-def analyze_policy(policy: IamPolicyData) -> List[Dict[str, Any]]:
+from typing import List, Dict, Any
+
+RESTRICTIVE_KEYS = {
+    "aws:SourceIp",
+    "aws:VpcSourceIp",
+    "aws:SourceVpc",
+    "aws:PrincipalOrgId",
+}
+
+def analyze_policy(policy: Dict[str, Any]) -> List[Dict[str, Any]]:
     findings = []
 
     doc = policy.document
@@ -55,4 +63,20 @@ def analyze_statement(stmt: Dict[str, Any]) -> str | None:
     if not_action and condition:
         return 'NotAction + Condition — risky if exclusions are narrow'
 
+    if ("*" in action or "*" in resource) and not is_restrictive(condition):
+        return 'Wildcard access without restrictive Condition — access may be too broad'
+
     return None
+
+
+def is_restrictive(condition: Any) -> bool:
+    if not isinstance(condition, dict):
+        return False
+
+    for cond_operator, cond_block in condition.items():
+        if not isinstance(cond_block, dict):
+            continue
+        for key in cond_block:
+            if key in RESTRICTIVE_KEYS:
+                return True
+    return False
