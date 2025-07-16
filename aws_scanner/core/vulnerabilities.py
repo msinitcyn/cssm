@@ -64,6 +64,13 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="iam_policy",
         remediation="Add restrictive Condition such as SourceIp or avoid wildcards."
     ),
+    "IAM_ROLE_BROAD_ASSUME_ROLE": VulnerabilityTemplate(
+        id="IAM_ROLE_BROAD_ASSUME_ROLE",
+        description="IAM Role trust policy allows sts:AssumeRole to Principal='*' or without restrictive conditions — critical lateral movement risk",
+        severity="critical",
+        entity_type="iam_role",
+        remediation="Restrict Principal in trust policy and add Condition to limit AssumeRole access."
+    ),
     "S3_PUBLIC_ACL": VulnerabilityTemplate(
         id="S3_PUBLIC_ACL",
         description="S3 bucket is publicly accessible via ACL.",

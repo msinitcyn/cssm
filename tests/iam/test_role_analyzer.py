@@ -55,3 +55,23 @@ def test_analyze_iam_role_multiple_findings():
     assert len(policies["Attached2"]["issues"]) > 0
     assert policies["Inline2"]["type"] == "inline"
     assert policies["Attached2"]["type"] == "attached"
+
+def test_analyze_iam_role_trust_policy_issue():
+    # Trust policy allows broad sts:AssumeRole with no restrictive condition
+    trust_policy = {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "sts:AssumeRole"
+            }
+        ]
+    }
+    role = IamRoleData(name="RoleTrust", trust_policy_document=trust_policy)
+    result = analyze_iam_role(role)
+    assert result["role"] == "RoleTrust"
+    assert result["trust_policy_issues"], "Should detect a trust policy issue"
+    issue = result["trust_policy_issues"][0]
+    assert issue["id"] == "IAM_ROLE_BROAD_ASSUME_ROLE"
+    assert "AssumeRole" in issue["description"]

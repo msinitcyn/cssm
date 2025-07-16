@@ -18,7 +18,7 @@ Milestone 3: Risk model improvements
 Milestone 4: IAM logic depth
 [x] Support for NotAction / NotResource
 [x] Detect Condition blocks
-[ ] Flag broad AssumeRole permissions
+[x] Flag broad AssumeRole permissions
 
 Milestone 5: SG and networking logic
 [ ] Detect cross-account SG rules

@@ -50,27 +50,21 @@ def analyze_statement(stmt: Dict[str, Any]):
     has_wildcard_action = any(a == "*" for a in action)
     has_wildcard_resource = any(r == "*" for r in resource)
 
-    # 1. Полный wildcard
     if has_wildcard_action and has_wildcard_resource:
         return VULNERABILITIES["IAM_POLICY_WILDCARD_ALL"].instantiate("policy", raw_data=stmt)
 
-    # 2. NotAction + wildcard Resource
     if not_action and has_wildcard_resource:
         return VULNERABILITIES["IAM_POLICY_NOTACTION_WILDCARD_RESOURCE"].instantiate("policy", raw_data=stmt)
 
-    # 3. NotResource + wildcard Action
     if not_resource and has_wildcard_action:
         return VULNERABILITIES["IAM_POLICY_NOTRESOURCE_WILDCARD_ACTION"].instantiate("policy", raw_data=stmt)
 
-    # 4. Wildcard Action with Condition (может быть опасно)
     if has_wildcard_action and condition:
         return VULNERABILITIES["IAM_POLICY_WILDCARD_ACTION_CONDITION"].instantiate("policy", raw_data=stmt)
 
-    # 5. NotAction with Condition (может быть опасно)
     if not_action and condition:
         return VULNERABILITIES["IAM_POLICY_NOTACTION_CONDITION"].instantiate("policy", raw_data=stmt)
 
-    # 6. Один wildcard и нет рестриктивной Condition
     if has_wildcard_action and not is_restrictive(condition):
         return VULNERABILITIES["IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION"].instantiate("policy", raw_data=stmt)
 
