@@ -18,7 +18,7 @@ def find_overpermissive_roles(iam=None):
     for role_data in roles:
         try:
             findings = analyze_iam_role(role_data)
-            results.extend(findings)
+            results.append(findings)
         except Exception as e:
             results.append({
                 "role": role_data.name,

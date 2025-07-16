@@ -55,15 +55,19 @@ def scan_iam():
         logging.critical(f"IAM endpoint error: {e}")
         sys.exit(1)
 
-    for item in results:
-        role = item.get("role", "<unknown>")
-        error = item.get("error")
-        policy_type = item.get("policy_type", "")
-        policy_name = item.get("policy_name", "")
-        if error:
-            logging.warning(f"{role}: ERROR — {error}")
-        else:
-            logging.warning(f"{role}: {policy_type} policy '{policy_name}' is over-permissive")
+    for role_result in results:
+        if not isinstance(role_result, dict):
+            logging.warning(f"IAM scan error or unexpected result: {role_result}")
+            continue
+        role = role_result.get("role", "<unknown>")
+        policies = role_result.get("policies", [])
+        for policy in policies:
+            policy_type = policy.get("type", "")
+            policy_name = policy.get("name", "")
+            issues = policy.get("issues", [])
+            if issues:
+                for issue in issues:
+                    logging.warning(f"{role}: {policy_type} policy '{policy_name}' is over-permissive: {issue.get('description', issue.get('id', ''))}")
     return results
 
 def scan_sg():

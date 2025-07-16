@@ -1,5 +1,6 @@
-ALL_USERS_URI = 'http://acs.amazonaws.com/groups/global/AllUsers'
+from aws_scanner.core.vulnerabilities import VULNERABILITIES
 
+ALL_USERS_URI = 'http://acs.amazonaws.com/groups/global/AllUsers'
 
 def classify_bucket_group(pab):
     ignore_acls = pab.get("IgnorePublicAcls", False)
@@ -18,7 +19,6 @@ def classify_bucket_group(pab):
     else:
         return "Blocked"
 
-
 def analyze_acl(bucket_data):
     pab = bucket_data.pab_config
     if pab.get("IgnorePublicAcls", False):
@@ -28,7 +28,6 @@ def analyze_acl(bucket_data):
         grant.get("Grantee", {}).get("URI") == ALL_USERS_URI
         for grant in acl
     )
-
 
 def analyze_policy(bucket_data):
     pab = bucket_data.pab_config
@@ -59,56 +58,43 @@ def analyze_policy(bucket_data):
 
     return is_public_policy, condition_present
 
-
-def get_access_vectors(is_acl, is_policy, bucket_data):
-    vectors = []
-    if is_acl:
-        vectors.append("ACL")
-    if is_policy:
-        vectors.append("Policy")
-    if vectors:
-        if bucket_data.cors_config:
-            vectors.append("CORS")
-        if bucket_data.website_config:
-            vectors.append("Website")
-    return vectors
-
-
-def score_risk(report, bucket_data):
-    if report.get("public"):
-        cors = bucket_data.cors_config or {}
-        cors_rules = cors.get("CORSRules", [])
-        for rule in cors_rules:
-            if "*" in rule.get("AllowedOrigins", []):
-                return "high"
-        if bucket_data.website_config:
-            return "medium"
-        return "medium"
-    elif report.get("potentially_public"):
-        return "low"
-    return "low"
-
-
 def analyze_s3_bucket(bucket_data):
     group = classify_bucket_group(bucket_data.pab_config)
     is_acl = analyze_acl(bucket_data)
     is_policy, has_condition = analyze_policy(bucket_data)
-    vectors = get_access_vectors(is_acl, is_policy, bucket_data)
 
-    result = {
+    findings = []
+
+    if is_acl:
+        findings.append(
+            VULNERABILITIES["S3_PUBLIC_ACL"].instantiate(bucket_data.name)
+        )
+
+    if is_policy:
+        findings.append(
+            VULNERABILITIES["S3_PUBLIC_POLICY"].instantiate(bucket_data.name)
+        )
+
+    if not is_policy and has_condition:
+        findings.append(
+            VULNERABILITIES["S3_POTENTIALLY_PUBLIC_POLICY_CONDITION"].instantiate(bucket_data.name)
+        )
+
+    cors = bucket_data.cors_config or {}
+    for rule in cors.get("CORSRules", []):
+        if "*" in rule.get("AllowedOrigins", []):
+            findings.append(
+                VULNERABILITIES["S3_PUBLIC_CORS"].instantiate(bucket_data.name, raw_data=rule)
+            )
+            break
+
+    if bucket_data.website_config:
+        findings.append(
+            VULNERABILITIES["S3_PUBLIC_WEBSITE"].instantiate(bucket_data.name)
+        )
+
+    return {
         "bucket": bucket_data.name,
         "group": group,
-        "access_vector": vectors if vectors else None,
-        "public": bool(vectors),
-        "risk": "low"
+        "findings": findings
     }
-
-    if not vectors and has_condition:
-        result.update({
-            "potentially_public": True,
-            "access_vector": ["Policy"],
-            "reason": "Condition present"
-        })
-
-    result["risk"] = score_risk(result, bucket_data)
-    return result

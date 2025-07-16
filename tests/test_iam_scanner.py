@@ -12,14 +12,16 @@ def test_find_overpermissive_roles_normal():
     mock_role2 = MagicMock()
     mock_role2.name = 'Role2'
     roles = [mock_role1, mock_role2]
-    findings_role1 = [{"role": "Role1", "issue": "Too permissive"}]
-    findings_role2 = [{"role": "Role2", "issue": "OK"}]
+    findings_role1 = {"role": "Role1", "policies": [
+        {"type": "inline", "name": "policy1", "issues": [{"description": "Too permissive"}]}
+    ]}
+    findings_role2 = {"role": "Role2", "policies": []}
 
     with patch('aws_scanner.scanners.iam_scanner.collect_iam_roles', return_value=roles) as mock_collect, \
          patch('aws_scanner.scanners.iam_scanner.analyze_iam_role', side_effect=[findings_role1, findings_role2]) as mock_analyze:
         results = find_overpermissive_roles(iam=mock_iam)
-        assert findings_role1[0] in results
-        assert findings_role2[0] in results
+        assert findings_role1 in results
+        assert findings_role2 in results
         mock_collect.assert_called_once_with(mock_iam)
         assert mock_analyze.call_count == 2
 

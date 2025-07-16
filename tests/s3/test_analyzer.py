@@ -2,6 +2,7 @@ import pytest
 from types import SimpleNamespace
 
 import aws_scanner.scanners.s3.analyzer as analyzer
+from aws_scanner.core.vulnerabilities import VULNERABILITIES
 
 def make_bucket_data(
     name="test-bucket",
@@ -21,16 +22,12 @@ def make_bucket_data(
     )
 
 def test_classify_bucket_group():
-    # Both ACL and Policy allowed
     pab = {"IgnorePublicAcls": False, "BlockPublicPolicy": False, "RestrictPublicBuckets": False}
     assert analyzer.classify_bucket_group(pab) == "ACL+Policy"
-    # Only ACL allowed
     pab = {"IgnorePublicAcls": False, "BlockPublicPolicy": True, "RestrictPublicBuckets": True}
     assert analyzer.classify_bucket_group(pab) == "ACL-only"
-    # Only Policy allowed
     pab = {"IgnorePublicAcls": True, "BlockPublicPolicy": False, "RestrictPublicBuckets": False}
     assert analyzer.classify_bucket_group(pab) == "Policy-only"
-    # Blocked
     pab = {"IgnorePublicAcls": True, "BlockPublicPolicy": True, "RestrictPublicBuckets": True}
     assert analyzer.classify_bucket_group(pab) == "Blocked"
 
@@ -92,46 +89,6 @@ def test_analyze_policy_non_public():
     assert not is_public
     assert not has_condition
 
-def test_get_access_vectors_acl_policy():
-    bucket = make_bucket_data(cors_config=None, website_config=None)
-    vectors = analyzer.get_access_vectors(True, True, bucket)
-    assert "ACL" in vectors and "Policy" in vectors
-
-def test_get_access_vectors_with_cors_and_website():
-    bucket = make_bucket_data(cors_config={"CORSRules": []}, website_config={"IndexDocument": "index.html"})
-    vectors = analyzer.get_access_vectors(True, False, bucket)
-    assert "ACL" in vectors and "CORS" in vectors and "Website" in vectors
-
-def test_get_access_vectors_none():
-    bucket = make_bucket_data()
-    vectors = analyzer.get_access_vectors(False, False, bucket)
-    assert vectors == []
-
-def test_score_risk_high_due_to_cors():
-    report = {"public": True}
-    bucket = make_bucket_data(cors_config={"CORSRules": [{"AllowedOrigins": ["*"]}]})
-    assert analyzer.score_risk(report, bucket) == "high"
-
-def test_score_risk_medium_due_to_website():
-    report = {"public": True}
-    bucket = make_bucket_data(cors_config={}, website_config={"IndexDocument": "index.html"})
-    assert analyzer.score_risk(report, bucket) == "medium"
-
-def test_score_risk_medium_default():
-    report = {"public": True}
-    bucket = make_bucket_data(cors_config={}, website_config=None)
-    assert analyzer.score_risk(report, bucket) == "medium"
-
-def test_score_risk_low_potentially_public():
-    report = {"potentially_public": True}
-    bucket = make_bucket_data()
-    assert analyzer.score_risk(report, bucket) == "low"
-
-def test_score_risk_low_default():
-    report = {}
-    bucket = make_bucket_data()
-    assert analyzer.score_risk(report, bucket) == "low"
-
 def test_analyze_s3_bucket_public_acl():
     bucket = make_bucket_data(
         name="bucket1",
@@ -142,11 +99,11 @@ def test_analyze_s3_bucket_public_acl():
         website_config=None
     )
     result = analyzer.analyze_s3_bucket(bucket)
+    finding_ids = [f["id"] for f in result["findings"]]
     assert result["bucket"] == "bucket1"
     assert result["group"] == "ACL+Policy"
-    assert "ACL" in result["access_vector"]
-    assert result["public"]
-    assert result["risk"] == "medium"
+    assert VULNERABILITIES["S3_PUBLIC_ACL"].id in finding_ids
+    assert VULNERABILITIES["S3_PUBLIC_POLICY"].id not in finding_ids
 
 def test_analyze_s3_bucket_public_policy():
     bucket = make_bucket_data(
@@ -158,11 +115,11 @@ def test_analyze_s3_bucket_public_policy():
         website_config=None
     )
     result = analyzer.analyze_s3_bucket(bucket)
+    finding_ids = [f["id"] for f in result["findings"]]
     assert result["bucket"] == "bucket2"
     assert result["group"] == "ACL+Policy"
-    assert "Policy" in result["access_vector"]
-    assert result["public"]
-    assert result["risk"] == "medium"
+    assert VULNERABILITIES["S3_PUBLIC_POLICY"].id in finding_ids
+    assert VULNERABILITIES["S3_PUBLIC_ACL"].id not in finding_ids
 
 def test_analyze_s3_bucket_potentially_public_condition():
     bucket = make_bucket_data(
@@ -174,12 +131,12 @@ def test_analyze_s3_bucket_potentially_public_condition():
         website_config=None
     )
     result = analyzer.analyze_s3_bucket(bucket)
+    finding_ids = [f["id"] for f in result["findings"]]
     assert result["bucket"] == "bucket3"
     assert result["group"] == "ACL+Policy"
-    assert result["potentially_public"]
-    assert result["access_vector"] == ["Policy"]
-    assert result["reason"] == "Condition present"
-    assert result["risk"] == "low"
+    assert VULNERABILITIES["S3_POTENTIALLY_PUBLIC_POLICY_CONDITION"].id in finding_ids
+    assert VULNERABILITIES["S3_PUBLIC_POLICY"].id not in finding_ids
+    assert VULNERABILITIES["S3_PUBLIC_ACL"].id not in finding_ids
 
 def test_analyze_s3_bucket_private():
     bucket = make_bucket_data(
@@ -191,8 +148,33 @@ def test_analyze_s3_bucket_private():
         website_config=None
     )
     result = analyzer.analyze_s3_bucket(bucket)
+    finding_ids = [f["id"] for f in result["findings"]]
     assert result["bucket"] == "bucket4"
     assert result["group"] == "ACL+Policy"
-    assert result["access_vector"] is None
-    assert not result["public"]
-    assert result["risk"] == "low"
+    assert finding_ids == []
+
+def test_analyze_s3_bucket_cors():
+    bucket = make_bucket_data(
+        name="bucket5",
+        pab_config={},
+        acl_grants=None,
+        policy_doc=None,
+        cors_config={"CORSRules": [{"AllowedOrigins": ["*"]}]},
+        website_config=None
+    )
+    result = analyzer.analyze_s3_bucket(bucket)
+    finding_ids = [f["id"] for f in result["findings"]]
+    assert VULNERABILITIES["S3_PUBLIC_CORS"].id in finding_ids
+
+def test_analyze_s3_bucket_website():
+    bucket = make_bucket_data(
+        name="bucket6",
+        pab_config={},
+        acl_grants=None,
+        policy_doc=None,
+        cors_config=None,
+        website_config={"IndexDocument": "index.html"}
+    )
+    result = analyzer.analyze_s3_bucket(bucket)
+    finding_ids = [f["id"] for f in result["findings"]]
+    assert VULNERABILITIES["S3_PUBLIC_WEBSITE"].id in finding_ids

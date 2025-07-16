@@ -1,6 +1,5 @@
-# aws_scanner/scanners/iam/policy_analyzer.py
-
 from typing import List, Dict, Any
+from aws_scanner.core.vulnerabilities import VULNERABILITIES
 
 RESTRICTIVE_KEYS = {
     "aws:SourceIp",
@@ -34,7 +33,7 @@ def analyze_policy(policy: Dict[str, Any]) -> List[Dict[str, Any]]:
     return findings
 
 
-def analyze_statement(stmt: Dict[str, Any]) -> str | None:
+def analyze_statement(stmt: Dict[str, Any]):
     def to_list(val):
         if isinstance(val, str):
             return [val]
@@ -48,23 +47,32 @@ def analyze_statement(stmt: Dict[str, Any]) -> str | None:
     not_resource = to_list(stmt.get("NotResource", []))
     condition = stmt.get("Condition")
 
-    if "*" in action and "*" in resource:
-        return 'Too permissive: Action="*", Resource="*"'
+    has_wildcard_action = any(a == "*" for a in action)
+    has_wildcard_resource = any(r == "*" for r in resource)
 
-    if not_action and "*" in resource:
-        return 'NotAction + wildcard Resource can lead to broad access'
+    # 1. Полный wildcard
+    if has_wildcard_action and has_wildcard_resource:
+        return VULNERABILITIES["IAM_POLICY_WILDCARD_ALL"].instantiate("policy", raw_data=stmt)
 
-    if not_resource and "*" in action:
-        return 'NotResource + wildcard Action can lead to broad access'
+    # 2. NotAction + wildcard Resource
+    if not_action and has_wildcard_resource:
+        return VULNERABILITIES["IAM_POLICY_NOTACTION_WILDCARD_RESOURCE"].instantiate("policy", raw_data=stmt)
 
-    if "*" in action and condition:
-        return 'Wildcard Action + Condition — risky if Condition is weak'
+    # 3. NotResource + wildcard Action
+    if not_resource and has_wildcard_action:
+        return VULNERABILITIES["IAM_POLICY_NOTRESOURCE_WILDCARD_ACTION"].instantiate("policy", raw_data=stmt)
 
+    # 4. Wildcard Action with Condition (может быть опасно)
+    if has_wildcard_action and condition:
+        return VULNERABILITIES["IAM_POLICY_WILDCARD_ACTION_CONDITION"].instantiate("policy", raw_data=stmt)
+
+    # 5. NotAction with Condition (может быть опасно)
     if not_action and condition:
-        return 'NotAction + Condition — risky if exclusions are narrow'
+        return VULNERABILITIES["IAM_POLICY_NOTACTION_CONDITION"].instantiate("policy", raw_data=stmt)
 
-    if ("*" in action or "*" in resource) and not is_restrictive(condition):
-        return 'Wildcard access without restrictive Condition — access may be too broad'
+    # 6. Один wildcard и нет рестриктивной Condition
+    if has_wildcard_action and not is_restrictive(condition):
+        return VULNERABILITIES["IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION"].instantiate("policy", raw_data=stmt)
 
     return None
 

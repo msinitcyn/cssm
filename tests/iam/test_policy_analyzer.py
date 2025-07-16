@@ -1,5 +1,6 @@
 from aws_scanner.scanners.iam.policy_analyzer import analyze_policy, analyze_statement, is_restrictive
 from aws_scanner.scanners.iam.iam_policy_data import IamPolicyData
+from aws_scanner.core.vulnerabilities import VULNERABILITIES
 
 def make_policy(document):
     return IamPolicyData(name="p", policy_type="inline", document=document, is_inline=True)
@@ -28,7 +29,7 @@ def test_analyze_policy_allow_and_risky():
     })
     findings = analyze_policy(policy)
     assert findings
-    assert "Too permissive" in findings[0]["issue"]
+    assert findings[0]["issue"]["id"] == VULNERABILITIES["IAM_POLICY_WILDCARD_ALL"].id
 
 def test_analyze_policy_multiple_statements():
     policy = make_policy({
@@ -47,7 +48,7 @@ def test_analyze_policy_multiple_statements():
     })
     findings = analyze_policy(policy)
     assert len(findings) == 1
-    assert "Too permissive" in findings[0]["issue"]
+    assert findings[0]["issue"]["id"] == VULNERABILITIES["IAM_POLICY_WILDCARD_ALL"].id
 
 def test_analyze_statement_patterns():
     # Action=* and Resource=*
@@ -56,21 +57,21 @@ def test_analyze_statement_patterns():
         "Action": "*",
         "Resource": "*"
     }
-    assert "Too permissive" in analyze_statement(stmt)
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_WILDCARD_ALL"].id
     # NotAction + wildcard Resource
     stmt = {
         "Effect": "Allow",
         "NotAction": "ec2:Describe*",
         "Resource": "*"
     }
-    assert "NotAction + wildcard Resource" in analyze_statement(stmt)
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_NOTACTION_WILDCARD_RESOURCE"].id
     # NotResource + wildcard Action
     stmt = {
         "Effect": "Allow",
         "Action": "*",
         "NotResource": "arn:aws:s3:::bucket"
     }
-    assert "NotResource + wildcard Action" in analyze_statement(stmt)
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_NOTRESOURCE_WILDCARD_ACTION"].id
     # Wildcard Action + Condition
     stmt = {
         "Effect": "Allow",
@@ -82,7 +83,7 @@ def test_analyze_statement_patterns():
             }
         }
     }
-    assert "Wildcard Action + Condition" in analyze_statement(stmt)
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_WILDCARD_ACTION_CONDITION"].id
     # NotAction + Condition
     stmt = {
         "Effect": "Allow",
@@ -94,7 +95,7 @@ def test_analyze_statement_patterns():
             }
         }
     }
-    assert "NotAction + Condition" in analyze_statement(stmt)
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_NOTACTION_CONDITION"].id
     # Safe statement
     stmt = {
         "Effect": "Allow",
@@ -118,7 +119,7 @@ def test_analyze_statement_wildcard_without_restrictive_condition():
         "Resource": "arn:aws:s3:::bucket"
         # No Condition
     }
-    assert "Wildcard access without restrictive Condition" in analyze_statement(stmt)
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION"].id
 
 def test_analyze_statement_wildcard_with_mfa_condition():
     stmt = {
@@ -131,4 +132,4 @@ def test_analyze_statement_wildcard_with_mfa_condition():
             }
         }
     }
-    assert analyze_statement(stmt) == "Wildcard Action + Condition — risky if Condition is weak"
+    assert analyze_statement(stmt)["id"] == VULNERABILITIES["IAM_POLICY_WILDCARD_ACTION_CONDITION"].id

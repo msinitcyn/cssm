@@ -12,7 +12,9 @@ def make_policy(name, policy_type, is_inline, doc):
 
 def test_analyze_iam_role_no_policies():
     role = IamRoleData(name="RoleX")
-    assert analyze_iam_role(role) == []
+    result = analyze_iam_role(role)
+    assert result["role"] == "RoleX"
+    assert result["policies"] == []
 
 def test_analyze_iam_role_inline_and_attached():
     # Inline policy: risky
@@ -24,9 +26,16 @@ def test_analyze_iam_role_inline_and_attached():
         inline_policies={"Inline1": inline_policy},
         attached_policies={"Attached1": attached_policy}
     )
-    findings = analyze_iam_role(role)
-    assert any(f["policy_type"] == "inline" and f["policy_name"] == "Inline1" for f in findings)
-    assert not any(f["policy_type"] == "attached" and f["policy_name"] == "Attached1" for f in findings)
+    result = analyze_iam_role(role)
+    assert result["role"] == "RoleY"
+    policies = {p["name"]: p for p in result["policies"]}
+    assert "Inline1" in policies
+    assert "Attached1" in policies
+    # Inline1 should have issues, Attached1 should not
+    assert len(policies["Inline1"]["issues"]) > 0
+    assert policies["Inline1"]["type"] == "inline"
+    assert policies["Attached1"]["issues"] == []
+    assert policies["Attached1"]["type"] == "attached"
 
 def test_analyze_iam_role_multiple_findings():
     # Both policies risky
@@ -37,8 +46,12 @@ def test_analyze_iam_role_multiple_findings():
         inline_policies={"Inline2": inline_policy},
         attached_policies={"Attached2": attached_policy}
     )
-    findings = analyze_iam_role(role)
-    assert any(f["policy_type"] == "inline" and f["policy_name"] == "Inline2" for f in findings)
-    assert any(f["policy_type"] == "attached" and f["policy_name"] == "Attached2" for f in findings)
-    for f in findings:
-        assert f["role"] == "RoleZ"
+    result = analyze_iam_role(role)
+    assert result["role"] == "RoleZ"
+    policies = {p["name"]: p for p in result["policies"]}
+    assert "Inline2" in policies
+    assert "Attached2" in policies
+    assert len(policies["Inline2"]["issues"]) > 0
+    assert len(policies["Attached2"]["issues"]) > 0
+    assert policies["Inline2"]["type"] == "inline"
+    assert policies["Attached2"]["type"] == "attached"
