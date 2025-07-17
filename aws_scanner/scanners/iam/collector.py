@@ -1,14 +1,13 @@
-# aws_scanner/scanners/iam/collector.py
-
-import boto3
 import botocore.exceptions
+
+from aws_scanner.core.boto3_wrapper import Boto3Wrapper
 from .iam_policy_data import IamPolicyData
 from .iam_role_data import IamRoleData
 
-def collect_iam_roles(iam=None):
-    if iam is None:
-        iam = boto3.client("iam")
+boto3Wrapper = Boto3Wrapper()
 
+def collect_iam_roles():
+    iam = boto3Wrapper.get_iam()
     roles = []
     paginator = iam.get_paginator("list_roles")
 

@@ -1,64 +1,58 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 import botocore
-from aws_scanner.scanners import s3_scanner
+from aws_scanner.scanners.s3_scanner import find_public_s3_buckets
 
-def make_s3_list_buckets(names):
-    return {"Buckets": [{"Name": n} for n in names]}
+class TestS3Scanner:
+    def test_all_success(self):
+        original_collect = find_public_s3_buckets.__globals__['collect_s3_bucket_data']
+        original_analyze = find_public_s3_buckets.__globals__['analyze_s3_bucket']
 
-@patch("aws_scanner.scanners.s3_scanner.analyze_s3_bucket")
-@patch("aws_scanner.scanners.s3_scanner.collect_s3_bucket_data")
-def test_find_public_s3_buckets_all_success(mock_collect, mock_analyze):
-    mock_s3 = MagicMock()
-    mock_s3.list_buckets.return_value = make_s3_list_buckets(["bucket1", "bucket2"])
-    mock_collect.side_effect = lambda s3, name: f"data-{name}"
-    mock_analyze.side_effect = lambda data: {"bucket": data.split("-")[1], "public": False}
-    result = s3_scanner.find_public_s3_buckets(mock_s3)
-    assert result == [
-        {"bucket": "bucket1", "public": False},
-        {"bucket": "bucket2", "public": False}
-    ]
+        find_public_s3_buckets.__globals__['collect_s3_bucket_data'] = MagicMock(
+            return_value=[{"Name": "bucket1"}, {"Name": "bucket2"}]
+        )
+        find_public_s3_buckets.__globals__['analyze_s3_bucket'] = MagicMock(
+            side_effect=lambda x: {"bucket": x["Name"], "public": False}
+        )
 
-@patch("aws_scanner.scanners.s3_scanner.analyze_s3_bucket")
-@patch("aws_scanner.scanners.s3_scanner.collect_s3_bucket_data")
-def test_find_public_s3_buckets_list_error(mock_collect, mock_analyze):
-    mock_s3 = MagicMock()
-    mock_s3.list_buckets.side_effect = botocore.exceptions.ClientError(
-        {"Error": {"Code": "AccessDenied"}}, "ListBuckets"
-    )
-    result = s3_scanner.find_public_s3_buckets(mock_s3)
-    assert result[0]["bucket"] == "<list_error>"
-    assert "error" in result[0]
+        result = find_public_s3_buckets()
 
-@patch("aws_scanner.scanners.s3_scanner.analyze_s3_bucket")
-@patch("aws_scanner.scanners.s3_scanner.collect_s3_bucket_data")
-def test_find_public_s3_buckets_bucket_error(mock_collect, mock_analyze):
-    mock_s3 = MagicMock()
-    mock_s3.list_buckets.return_value = make_s3_list_buckets(["bucket1", "bucket2"])
-    def collect_side_effect(s3, name):
-        if name == "bucket1":
-            raise botocore.exceptions.ClientError({"Error": {"Code": "AccessDenied"}}, "GetBucket")
-        return f"data-{name}"
-    mock_collect.side_effect = collect_side_effect
-    mock_analyze.side_effect = lambda data: {"bucket": data.split("-")[1], "public": True}
-    result = s3_scanner.find_public_s3_buckets(mock_s3)
-    buckets = {r["bucket"]: r for r in result}
-    assert "error" in buckets["bucket1"]
-    assert buckets["bucket2"]["public"] is True
+        assert len(result) == 2
+        assert all(r["public"] is False for r in result)
 
-@patch("aws_scanner.scanners.s3_scanner.analyze_s3_bucket")
-@patch("aws_scanner.scanners.s3_scanner.collect_s3_bucket_data")
-def test_find_public_s3_buckets_mixed_results(mock_collect, mock_analyze):
-    mock_s3 = MagicMock()
-    mock_s3.list_buckets.return_value = make_s3_list_buckets(["bucket1", "bucket2", "bucket3"])
-    def collect_side_effect(s3, name):
-        if name == "bucket2":
-            raise botocore.exceptions.ClientError({"Error": {"Code": "AccessDenied"}}, "GetBucket")
-        return f"data-{name}"
-    mock_collect.side_effect = collect_side_effect
-    mock_analyze.side_effect = lambda data: {"bucket": data.split("-")[1], "public": False}
-    result = s3_scanner.find_public_s3_buckets(mock_s3)
-    buckets = {r["bucket"]: r for r in result}
-    assert buckets["bucket1"]["public"] is False
-    assert "error" in buckets["bucket2"]
-    assert buckets["bucket3"]["public"] is False
+        find_public_s3_buckets.__globals__['collect_s3_bucket_data'] = original_collect
+        find_public_s3_buckets.__globals__['analyze_s3_bucket'] = original_analyze
+
+    def test_collect_error(self):
+        original_collect = find_public_s3_buckets.__globals__['collect_s3_bucket_data']
+        find_public_s3_buckets.__globals__['collect_s3_bucket_data'] = MagicMock(
+            side_effect=botocore.exceptions.ClientError(
+                {"Error": {"Code": "AccessDenied"}}, "operation"
+            )
+        )
+
+        result = find_public_s3_buckets()
+        assert len(result) == 1
+        assert result[0]["bucket"] == "<collection_error>"
+
+        find_public_s3_buckets.__globals__['collect_s3_bucket_data'] = original_collect
+
+    def test_analyze_error(self):
+        original_collect = find_public_s3_buckets.__globals__['collect_s3_bucket_data']
+        original_analyze = find_public_s3_buckets.__globals__['analyze_s3_bucket']
+
+        find_public_s3_buckets.__globals__['collect_s3_bucket_data'] = MagicMock(
+            return_value=[{"Name": "problem-bucket"}]
+        )
+        find_public_s3_buckets.__globals__['analyze_s3_bucket'] = MagicMock(
+            side_effect=botocore.exceptions.ClientError(
+                {"Error": {"Code": "AnalyzeError"}}, "operation"
+            )
+        )
+
+        result = find_public_s3_buckets()
+        assert len(result) == 1
+        assert result[0]["bucket"] == "problem-bucket"
+        assert "AnalyzeError" in result[0]["error"]
+
+        find_public_s3_buckets.__globals__['collect_s3_bucket_data'] = original_collect
+        find_public_s3_buckets.__globals__['analyze_s3_bucket'] = original_analyze

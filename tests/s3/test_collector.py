@@ -1,102 +1,100 @@
-import sys, os
-import pytest
-from unittest.mock import MagicMock, patch
-import botocore
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../../..')))
+from unittest.mock import MagicMock
+from botocore.exceptions import ClientError
+from aws_scanner.core.boto3_wrapper import Boto3Wrapper
 from aws_scanner.scanners.s3.collector import collect_s3_bucket_data
 from aws_scanner.scanners.s3.s3_bucket_data import S3BucketData
 
-class DummyClientError(botocore.exceptions.ClientError):
+class DummyClientError(ClientError):
     def __init__(self, code):
         super().__init__({'Error': {'Code': code}}, 'operation')
 
-def make_s3_mock(
-    pab=None, pab_exc=None,
-    acl=None, acl_exc=None,
-    policy=None, policy_exc=None,
-    cors=None, cors_exc=None,
-    website=None, website_exc=None
-):
-    s3 = MagicMock()
-    if pab_exc:
-        s3.get_public_access_block.side_effect = pab_exc
-    else:
-        s3.get_public_access_block.return_value = pab
-    if acl_exc:
-        s3.get_bucket_acl.side_effect = acl_exc
-    else:
-        s3.get_bucket_acl.return_value = acl
-    if policy_exc:
-        s3.get_bucket_policy.side_effect = policy_exc
-    else:
-        s3.get_bucket_policy.return_value = policy
-    if cors_exc:
-        s3.get_bucket_cors.side_effect = cors_exc
-    else:
-        s3.get_bucket_cors.return_value = cors
-    if website_exc:
-        s3.get_bucket_website.side_effect = website_exc
-    else:
-        s3.get_bucket_website.return_value = website
-    return s3
+def test_collect_single_bucket_success():
+    original_get_s3 = Boto3Wrapper.get_s3
+    mock_s3 = MagicMock()
+    Boto3Wrapper.get_s3 = MagicMock(return_value=mock_s3)
 
-def test_all_methods_success():
-    s3 = make_s3_mock(
-        pab={"PublicAccessBlockConfiguration": {"BlockPublicAcls": True}},
-        acl={"Grants": ["grant1"]},
-        policy={"Policy": '{"Statement": [1]}'},
-        cors={"CORSRules": ["rule1"]},
-        website={"IndexDocument": "index.html"}
-    )
-    data = collect_s3_bucket_data(s3, "bucket1")
-    assert data.name == "bucket1"
-    assert data.pab_config == {"BlockPublicAcls": True}
-    assert data.acl_grants == ["grant1"]
-    assert data.policy_doc == {"Statement": [1]}
-    assert data.cors_config == {"CORSRules": ["rule1"]}
-    assert data.website_config == {"IndexDocument": "index.html"}
+    mock_s3.list_buckets.return_value = {'Buckets': [{'Name': 'test-bucket'}]}
+    mock_s3.get_public_access_block.return_value = {'PublicAccessBlockConfiguration': {'BlockPublicAcls': True}}
+    mock_s3.get_bucket_acl.return_value = {'Grants': ['grant1']}
+    mock_s3.get_bucket_policy.return_value = {'Policy': '{"Statement": []}'}
+    mock_s3.get_bucket_cors.return_value = {'CORSRules': ['rule1']}
+    mock_s3.get_bucket_website.return_value = {'IndexDocument': 'index.html'}
 
-def test_public_access_block_no_such_block():
-    s3 = make_s3_mock(
-        pab_exc=DummyClientError("NoSuchPublicAccessBlock"),
-        acl={"Grants": []},
-        policy={"Policy": None},
-        cors={},
-        website={}
-    )
-    data = collect_s3_bucket_data(s3, "bucket2")
-    assert data.pab_config == {}
+    results = collect_s3_bucket_data('test-bucket')
+    assert len(results) == 1
+    assert isinstance(results[0], S3BucketData)
+    assert results[0].name == 'test-bucket'
+    assert results[0].pab_config == {'BlockPublicAcls': True}
+    assert results[0].acl_grants == ['grant1']
+    assert results[0].policy_doc == {'Statement': []}
+    assert results[0].cors_config == {'CORSRules': ['rule1']}
+    assert results[0].website_config == {'IndexDocument': 'index.html'}
 
-def test_acl_and_policy_client_error():
-    s3 = make_s3_mock(
-        pab={"PublicAccessBlockConfiguration": {}},
-        acl_exc=DummyClientError("SomeError"),
-        policy_exc=DummyClientError("SomeError"),
-        cors={},
-        website={}
-    )
-    data = collect_s3_bucket_data(s3, "bucket3")
-    assert data.acl_grants == []
-    assert data.policy_doc == {}
+    Boto3Wrapper.get_s3 = original_get_s3
 
-def test_all_methods_client_error():
-    s3 = make_s3_mock(
-        pab_exc=DummyClientError("SomeError"),
-        acl_exc=DummyClientError("SomeError"),
-        policy_exc=DummyClientError("SomeError"),
-        cors_exc=DummyClientError("SomeError"),
-        website_exc=DummyClientError("SomeError")
-    )
-    with pytest.raises(botocore.exceptions.ClientError):
-        collect_s3_bucket_data(s3, "bucket4")
+def test_collect_all_buckets_with_errors():
+    original_get_s3 = Boto3Wrapper.get_s3
+    mock_s3 = MagicMock()
+    Boto3Wrapper.get_s3 = MagicMock(return_value=mock_s3)
 
-def test_policy_none():
-    s3 = make_s3_mock(
-        pab={"PublicAccessBlockConfiguration": {}},
-        acl={"Grants": []},
-        policy={"Policy": None},
-        cors={},
-        website={}
-    )
-    data = collect_s3_bucket_data(s3, "bucket5")
-    assert data.policy_doc == {}
+    mock_s3.list_buckets.return_value = {'Buckets': [{'Name': 'bucket1'}, {'Name': 'bucket2'}]}
+    mock_s3.get_public_access_block.side_effect = [
+        DummyClientError('NoSuchPublicAccessBlock'),
+        {'PublicAccessBlockConfiguration': {}}
+    ]
+    mock_s3.get_bucket_acl.side_effect = [
+        DummyClientError('AccessDenied'),
+        {'Grants': []}
+    ]
+    mock_s3.get_bucket_policy.side_effect = [
+        {'Policy': None},
+        DummyClientError('NoSuchBucketPolicy')
+    ]
+
+    results = collect_s3_bucket_data()
+    assert len(results) == 2
+    assert results[0].pab_config == {}
+    assert results[0].acl_grants == []
+    assert results[1].pab_config == {}
+    assert results[1].acl_grants == []
+
+    Boto3Wrapper.get_s3 = original_get_s3
+
+def test_list_buckets_error():
+    original_get_s3 = Boto3Wrapper.get_s3
+    mock_s3 = MagicMock()
+    Boto3Wrapper.get_s3 = MagicMock(return_value=mock_s3)
+
+    mock_s3.list_buckets.side_effect = ClientError({'Error': {'Code': 'AccessDenied'}}, 'ListBuckets')
+
+    results = collect_s3_bucket_data()
+    assert results == []
+
+    Boto3Wrapper.get_s3 = original_get_s3
+
+def test_public_access_block_error():
+    original_get_s3 = Boto3Wrapper.get_s3
+    mock_s3 = MagicMock()
+    Boto3Wrapper.get_s3 = MagicMock(return_value=mock_s3)
+
+    mock_s3.list_buckets.return_value = {'Buckets': [{'Name': 'bucket1'}]}
+    mock_s3.get_public_access_block.side_effect = DummyClientError('AccessDenied')
+
+    results = collect_s3_bucket_data()
+    assert len(results) == 0
+
+    Boto3Wrapper.get_s3 = original_get_s3
+
+def test_policy_parsing():
+    original_get_s3 = Boto3Wrapper.get_s3
+    mock_s3 = MagicMock()
+    Boto3Wrapper.get_s3 = MagicMock(return_value=mock_s3)
+
+    mock_s3.list_buckets.return_value = {'Buckets': [{'Name': 'bucket1'}]}
+    mock_s3.get_bucket_policy.return_value = {'Policy': '{"Version": "2012-10-17"}'}
+
+    results = collect_s3_bucket_data()
+    assert len(results) == 1
+    assert results[0].policy_doc == {'Version': '2012-10-17'}
+
+    Boto3Wrapper.get_s3 = original_get_s3

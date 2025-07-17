@@ -23,7 +23,7 @@ Milestone 4: IAM logic depth
 Milestone 5: SG and networking logic
 [x] Detect cross-account SG rules
 [x] Warn on port range 0–65535
-[ ] Multi-region SG scan (optional)
+[x] Multi-region SG scan (optional)
 
 Milestone 6: S3 context awareness
 [ ] Detect CORS config with wildcard origins

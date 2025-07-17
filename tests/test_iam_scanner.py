@@ -1,57 +1,67 @@
-import pytest
-from unittest.mock import MagicMock, patch
+from unittest.mock import MagicMock
 from botocore.exceptions import ClientError
-
 from aws_scanner.scanners.iam_scanner import find_overpermissive_roles
 
-
 def test_find_overpermissive_roles_normal():
-    mock_iam = MagicMock()
+    # Setup mock roles and findings
     mock_role1 = MagicMock()
     mock_role1.name = 'Role1'
     mock_role2 = MagicMock()
     mock_role2.name = 'Role2'
-    roles = [mock_role1, mock_role2]
-    findings_role1 = {"role": "Role1", "policies": [
-        {"type": "inline", "name": "policy1", "issues": [{"description": "Too permissive"}]}
-    ]}
-    findings_role2 = {"role": "Role2", "policies": []}
 
-    with patch('aws_scanner.scanners.iam_scanner.collect_iam_roles', return_value=roles) as mock_collect, \
-         patch('aws_scanner.scanners.iam_scanner.analyze_iam_role', side_effect=[findings_role1, findings_role2]) as mock_analyze:
-        results = find_overpermissive_roles(iam=mock_iam)
-        assert findings_role1 in results
-        assert findings_role2 in results
-        mock_collect.assert_called_once_with(mock_iam)
-        assert mock_analyze.call_count == 2
+    # Mock the collector to return our test roles
+    original_collect = find_overpermissive_roles.__globals__['collect_iam_roles']
+    find_overpermissive_roles.__globals__['collect_iam_roles'] = MagicMock(return_value=[mock_role1, mock_role2])
 
+    # Mock the analyzer to return test findings
+    original_analyze = find_overpermissive_roles.__globals__['analyze_iam_role']
+    find_overpermissive_roles.__globals__['analyze_iam_role'] = MagicMock(side_effect=[
+        {"role": "Role1", "findings": []},
+        {"role": "Role2", "findings": []}
+    ])
+
+    results = find_overpermissive_roles()
+    assert len(results) == 2
+    assert all(r["role"] in ["Role1", "Role2"] for r in results)
+
+    # Restore original functions
+    find_overpermissive_roles.__globals__['collect_iam_roles'] = original_collect
+    find_overpermissive_roles.__globals__['analyze_iam_role'] = original_analyze
 
 def test_find_overpermissive_roles_collect_error():
-    mock_iam = MagicMock()
-    error = ClientError({'Error': {'Code': 'AccessDenied', 'Message': 'Not authorized'}}, 'ListRoles')
-    with patch('aws_scanner.scanners.iam_scanner.collect_iam_roles', side_effect=error):
-        results = find_overpermissive_roles(iam=mock_iam)
-        assert len(results) == 1
-        assert results[0]["role"] == "<error>"
-        assert "Not authorized" in results[0]["error"]
+    # Mock collector to raise error
+    original_collect = find_overpermissive_roles.__globals__['collect_iam_roles']
+    find_overpermissive_roles.__globals__['collect_iam_roles'] = MagicMock(
+        side_effect=ClientError({'Error': {'Code': 'AccessDenied'}}, 'operation')
+    )
 
+    results = find_overpermissive_roles()
+    assert len(results) == 1
+    assert results[0]["role"] == "<error>"
+    assert "AccessDenied" in results[0]["error"]
+
+    find_overpermissive_roles.__globals__['collect_iam_roles'] = original_collect
 
 def test_find_overpermissive_roles_analyze_error():
-    mock_iam = MagicMock()
+    # Setup mock role
     mock_role = MagicMock()
-    mock_role.name = 'Role1'
-    roles = [mock_role]
-    with patch('aws_scanner.scanners.iam_scanner.collect_iam_roles', return_value=roles), \
-         patch('aws_scanner.scanners.iam_scanner.analyze_iam_role', side_effect=Exception("analyze error")):
-        results = find_overpermissive_roles(iam=mock_iam)
-        assert len(results) == 1
-        assert results[0]["role"] == "Role1"
-        assert "analyze error" in results[0]["error"]
+    mock_role.name = 'ProblemRole'
 
+    # Mock collector to return our test role
+    original_collect = find_overpermissive_roles.__globals__['collect_iam_roles']
+    find_overpermissive_roles.__globals__['collect_iam_roles'] = MagicMock(return_value=[mock_role])
 
-def test_find_overpermissive_roles_uses_default_iam():
-    # Patch boto3.client to check that it's called if iam is None
-    with patch('boto3.client') as mock_boto_client, \
-         patch('aws_scanner.scanners.iam_scanner.collect_iam_roles', return_value=[]):
-        find_overpermissive_roles(iam=None)
-        mock_boto_client.assert_called_once_with('iam')
+    # Mock analyzer to raise error
+    original_analyze = find_overpermissive_roles.__globals__['analyze_iam_role']
+    find_overpermissive_roles.__globals__['analyze_iam_role'] = MagicMock(
+        side_effect=Exception("Analysis failed")
+    )
+
+    results = find_overpermissive_roles()
+    assert len(results) == 1
+    assert results[0]["role"] == "ProblemRole"
+    assert "Analysis failed" in results[0]["error"]
+
+    # Restore original functions
+    find_overpermissive_roles.__globals__['collect_iam_roles'] = original_collect
+    find_overpermissive_roles.__globals__['analyze_iam_role'] = original_analyze

@@ -7,7 +7,7 @@ import pytest
 
 def sample_json_data():
     return {
-        "s3_public_buckets": [
+        "s3_buckets": [
             {
                 "bucket": "test-bucket",
                 "group": "AllUsers",
@@ -17,14 +17,14 @@ def sample_json_data():
                 "reason": "Bucket is public"
             }
         ],
-        "overpermissive_iam_roles": [
+        "iam_roles": [
             {
                 "role": "AdminRole",
                 "policy_type": "inline",
                 "policy_name": "FullAccess"
             }
         ],
-        "sg_open_ports": [
+        "security_groups": [
             {
                 "group_id": "sg-123456",
                 "group_name": "default",
@@ -60,5 +60,5 @@ def test_generate_html_report_empty(tmp_path):
     generate_html_report(json_data, output_path)
     html = output_path.read_text(encoding="utf-8")
     assert "No S3 buckets found" in html
-    assert "No over-permissive IAM roles found" in html
-    assert "No open security groups found" in html
+    assert "No IAM roles found" in html
+    assert "No security groups found" in html

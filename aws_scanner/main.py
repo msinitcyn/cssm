@@ -5,6 +5,7 @@ import argparse
 import logging
 from pathlib import Path
 
+import boto3
 import botocore.exceptions
 from dotenv import load_dotenv
 
@@ -70,10 +71,10 @@ def scan_iam():
                     logging.warning(f"{role}: {policy_type} policy '{policy_name}' is over-permissive: {issue.get('description', issue.get('id', ''))}")
     return results
 
-def scan_sg():
+def scan_sg(regions):
     logging.info("Scanning security groups for open ports...")
     try:
-        results = scan_security_groups()
+        results = scan_security_groups(regions=regions)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found. Aborting SG scan.")
         sys.exit(1)
@@ -111,22 +112,28 @@ def main():
     group.add_argument('--sg-only', action='store_true', help='Scan only security groups')
     group.add_argument('--all', action='store_true', help='Scan everything (default)')
 
+    parser.add_argument('--regions', type=str, help='Comma-separated list of AWS regions to scan (SG only)')
     parser.add_argument('--output', type=Path, default=Path("output/report.json"), help='Path to save JSON report')
     parser.add_argument('--html', action='store_true', help='Also generate HTML summary report')
 
     args = parser.parse_args()
     output = {}
 
-    if args.s3_only:
-        output["s3_public_buckets"] = scan_s3()
-    elif args.iam_only:
-        output["overpermissive_iam_roles"] = scan_iam()
-    elif args.sg_only:
-        output["sg_open_ports"] = scan_sg()
+    if args.regions:
+        regions = [r.strip() for r in args.regions.split(",") if r.strip()]
     else:
-        output["s3_public_buckets"] = scan_s3()
-        output["overpermissive_iam_roles"] = scan_iam()
-        output["sg_open_ports"] = scan_sg()
+        regions = None
+
+    if args.s3_only:
+        output["s3_buckets"] = scan_s3()
+    elif args.iam_only:
+        output["iam_roles"] = scan_iam()
+    elif args.sg_only:
+        output["security_groups"] = scan_sg(regions)
+    else:
+        output["s3_buckets"] = scan_s3()
+        output["iam_roles"] = scan_iam()
+        output["security_groups"] = scan_sg(regions)
 
     args.output.parent.mkdir(parents=True, exist_ok=True)
     with args.output.open("w") as f:
