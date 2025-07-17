@@ -106,4 +106,18 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="s3_bucket",
         remediation="Restrict website configuration or disable if not needed."
     ),
+    "SG_OPEN_PORT": VulnerabilityTemplate(
+        id="SG_OPEN_PORT",
+        description="Security Group allows access to dangerous or all ports from open CIDR",
+        severity="high",
+        entity_type="security_group",
+        remediation="Restrict access by CIDR and port range"
+    ),
+    "CROSS_ACCOUNT_SG_REFERENCE": VulnerabilityTemplate(
+        id="CROSS_ACCOUNT_SG_REFERENCE",
+        description="Ingress rule references a group from another AWS account",
+        severity="medium",
+        entity_type="security_group",
+        remediation="Review trust boundary and intended access"
+    ),
 }

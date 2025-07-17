@@ -21,7 +21,7 @@ Milestone 4: IAM logic depth
 [x] Flag broad AssumeRole permissions
 
 Milestone 5: SG and networking logic
-[ ] Detect cross-account SG rules
+[x] Detect cross-account SG rules
 [ ] Warn on port range 0–65535
 [ ] Multi-region SG scan (optional)
 
@@ -52,95 +52,95 @@ Milestone 10: AI assistant layer
 
 # Feature descriptions
 
-CLI with argparse flags  
+CLI with argparse flags
 — Allow selecting which services to scan via flags: `--s3-only`, `--iam-only`, `--sg-only`, `--all`. Enables scripting and automation.
 
-Logging and critical error handling  
+Logging and critical error handling
 — Log warnings, errors, and AWS exceptions clearly. Exit with failure on missing credentials, unreachable regions, etc.
 
---output path support  
+--output path support
 — Allow user to specify JSON report output path via `--output /path/to/file.json`.
 
-SG: IPv6 and port range awareness  
+SG: IPv6 and port range awareness
 — Detect rules like `::/0` and port ranges (`FromPort=0, ToPort=65535`). These are commonly overlooked misconfigurations.
 
-S3: advanced policy checks  
+S3: advanced policy checks
 — Analyze both ACL and bucket policy, including cases with conditions or partial wildcard access. Respect PublicAccessBlock configuration.
 
-.env support, AWS_PROFILE loading  
+.env support, AWS_PROFILE loading
 — Load AWS credentials and region config from `.env` or environment vars. Allow devs to avoid setting credentials globally.
 
-Dockerfile for containerized runs  
+Dockerfile for containerized runs
 — Provide a lightweight image for reproducible usage and CI/CD. Include necessary Python deps and entrypoint.
 
-GitHub Actions CI  
+GitHub Actions CI
 — Run tests, and build Docker image in GitHub Actions pipeline on push / PR.
 
-Risk level scoring  
+Risk level scoring
 — Assign severity levels (e.g., `high`, `medium`, `low`) to findings based on exposure and impact. Example: public S3 + wildcard CORS = high.
 
-Multiple access vectors  
+Multiple access vectors
 — Report when both ACL and policy allow access. Instead of `access_vector: "ACL"`, use `["ACL", "Policy"]`.
 
-HTML summary report  
+HTML summary report
 — Generate optional human-readable `.html` report alongside `.json`, highlighting key risks for sharing or internal reviews.
 
-Support for NotAction / NotResource  
+Support for NotAction / NotResource
 — Properly analyze IAM policies that use exclusions like `"NotAction": "iam:DeleteRole"`. These can lead to overbroad access.
 
-Detect Condition blocks  
+Detect Condition blocks
 — Detect if a policy lacks restrictive `Condition`, e.g., IP or VPC source restriction. Warn if overbroad.
 
-Flag broad AssumeRole permissions  
+Flag broad AssumeRole permissions
 — Warn on IAM roles that allow `sts:AssumeRole` to `Principal: *`, or with no condition. These are critical lateral movement risks.
 
-Detect cross-account SG rules  
+Detect cross-account SG rules
 — Identify SG ingress rules referencing groups in another AWS account via `UserIdGroupPairs`. Potential hidden trust boundaries.
 
-Warn on port range 0–65535  
+Warn on port range 0–65535
 — SG rule like `FromPort=0` to `ToPort=65535` should raise a warning, even if not to 0.0.0.0/0. Signals poor boundary control.
 
-Multi-region SG scan (optional)  
+Multi-region SG scan (optional)
 — Allow scanning of SGs in all enabled regions. Currently skipped, but may help teams with global infra.
 
-Detect CORS config with wildcard origins  
+Detect CORS config with wildcard origins
 — If S3 bucket has CORS config allowing `*` origin or all headers/methods, flag it. Especially dangerous when combined with public policy.
 
-Detect website hosting config  
+Detect website hosting config
 — Flag if `WebsiteConfiguration` is enabled on an S3 bucket. Increases attack surface.
 
-Rule-based risk evaluation for S3  
+Rule-based risk evaluation for S3
 — Combine ACL + policy + CORS + website flags to assign a single risk label. Example: “public read via ACL and wildcard CORS”.
 
-Standalone CLI for local IAM policy analysis  
+Standalone CLI for local IAM policy analysis
 — A script that accepts local JSON IAM policy and runs analysis without needing AWS credentials.
 
-Snapshot diffing  
+Snapshot diffing
 — Track changes in scanned resources over time. Example: "bucket X was private, now public". Use hash or JSON diff.
 
-Optional ignore-list  
+Optional ignore-list
 — Support a config file like `known_public_buckets.json` to suppress expected findings in output. Prevent noise.
 
-GitHub Bot for PR comments  
+GitHub Bot for PR comments
 — Automatically post inline comments on PRs that introduce insecure IAM policies or SG rules. Based on scanning changed files.
 
-VSCode extension  
+VSCode extension
 — Highlight dangerous IAM actions, wildcard resources, or insecure SG blocks inline in code editor during development.
 
-Self-hosted Flask UI  
+Self-hosted Flask UI
 — Basic web frontend to upload `.json` reports or trigger scans. For teams without CLI fluency.
 
-Celery queue for async scans  
+Celery queue for async scans
 — Background task runner to support concurrent scans via UI or API. Useful in the future for multi-account/multi-region support.
 
-Database for scan history  
+Database for scan history
 — Store past scans and compare deltas. Enables audit trails and compliance verification.
 
-IAM Policy Builder  
+IAM Policy Builder
 — Given a user prompt like "read-only access to S3 bucket X", generate least-privilege IAM policy using AI.
 
-Risk Annotator  
+Risk Annotator
 — Translate complex IAM policy JSON into plain English explanation. Explain who can access what and how.
 
-PR Comment Assistant  
+PR Comment Assistant
 — On pull requests, generate a natural language comment summarizing changes and potential security risks.

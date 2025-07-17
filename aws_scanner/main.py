@@ -10,7 +10,7 @@ from dotenv import load_dotenv
 
 from .scanners.s3_scanner import find_public_s3_buckets
 from .scanners.iam_scanner import find_overpermissive_roles
-from .scanners.sg_scanner import find_open_security_groups
+from .scanners.sg_scanner import scan_security_groups
 from .reports.html_report import generate_html_report
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -73,7 +73,7 @@ def scan_iam():
 def scan_sg():
     logging.info("Scanning security groups for open ports...")
     try:
-        results = find_open_security_groups()
+        results = scan_security_groups()
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found. Aborting SG scan.")
         sys.exit(1)
