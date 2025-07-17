@@ -27,7 +27,7 @@ Milestone 5: SG and networking logic
 
 Milestone 6: S3 context awareness
 [x] Detect CORS config with wildcard origins
-[ ] Detect website hosting config
+[x] Detect website hosting config
 [ ] Rule-based risk evaluation for S3
 
 Milestone 7: Lightweight tooling extensions
