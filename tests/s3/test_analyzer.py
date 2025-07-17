@@ -153,18 +153,31 @@ def test_analyze_s3_bucket_private():
     assert result["group"] == "ACL+Policy"
     assert finding_ids == []
 
-def test_analyze_s3_bucket_cors():
+def test_analyze_s3_bucket_multiple_cors_findings():
     bucket = make_bucket_data(
-        name="bucket5",
+        name="bucket_with_multiple_cors",
         pab_config={},
         acl_grants=None,
         policy_doc=None,
-        cors_config={"CORSRules": [{"AllowedOrigins": ["*"]}]},
+        cors_config={
+            "CORSRules": [
+                {"AllowedOrigins": ["*"]},
+                {"AllowedOrigins": ["https://example.com"]},
+                {"AllowedOrigins": ["*"]},
+            ]
+        },
         website_config=None
     )
     result = analyzer.analyze_s3_bucket(bucket)
-    finding_ids = [f["id"] for f in result["findings"]]
-    assert VULNERABILITIES["S3_PUBLIC_CORS"].id in finding_ids
+
+    findings = [
+        f for f in result["findings"]
+        if f["id"] == VULNERABILITIES["S3_PUBLIC_CORS"].id
+    ]
+    assert len(findings) == 2, "Expected two overpermissive CORS findings"
+    for f in findings:
+        assert f["entity_name"] == "bucket_with_multiple_cors"
+
 
 def test_analyze_s3_bucket_website():
     bucket = make_bucket_data(

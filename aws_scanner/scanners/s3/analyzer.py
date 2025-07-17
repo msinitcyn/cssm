@@ -58,6 +58,12 @@ def analyze_policy(bucket_data):
 
     return is_public_policy, condition_present
 
+def is_cors_rule_overpermissive(rule: dict) -> bool:
+    return any(
+        "*" in rule.get(key, [])
+        for key in ["AllowedOrigins", "AllowedHeaders", "AllowedMethods"]
+    )
+
 def analyze_s3_bucket(bucket_data):
     group = classify_bucket_group(bucket_data.pab_config)
     is_acl = analyze_acl(bucket_data)
@@ -82,11 +88,10 @@ def analyze_s3_bucket(bucket_data):
 
     cors = bucket_data.cors_config or {}
     for rule in cors.get("CORSRules", []):
-        if "*" in rule.get("AllowedOrigins", []):
+        if is_cors_rule_overpermissive(rule):
             findings.append(
                 VULNERABILITIES["S3_PUBLIC_CORS"].instantiate(bucket_data.name, raw_data=rule)
             )
-            break
 
     if bucket_data.website_config:
         findings.append(

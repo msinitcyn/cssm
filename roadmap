@@ -26,7 +26,7 @@ Milestone 5: SG and networking logic
 [x] Multi-region SG scan (optional)
 
 Milestone 6: S3 context awareness
-[ ] Detect CORS config with wildcard origins
+[x] Detect CORS config with wildcard origins
 [ ] Detect website hosting config
 [ ] Rule-based risk evaluation for S3
 
