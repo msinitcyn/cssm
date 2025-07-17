@@ -120,4 +120,11 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="security_group",
         remediation="Review trust boundary and intended access"
     ),
+    "SG_ALL_PORTS_INTERNAL": VulnerabilityTemplate(
+        id="SG_ALL_PORTS_INTERNAL",
+        description="Security Group allows port range 0–65535 internally or to non-public CIDRs",
+        severity="medium",
+        entity_type="security_group",
+        remediation="Restrict port ranges or split rules by protocol/port for better boundary control"
+    ),
 }

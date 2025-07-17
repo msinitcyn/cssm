@@ -85,12 +85,23 @@ def scan_sg():
         if "error" in item:
             logging.warning(f"Security group scan error: {item['error']}")
             continue
+
         group_id = item.get("group_id", "<unknown>")
         group_name = item.get("group_name", "")
-        from_port = item.get("from_port")
-        cidr = item.get("cidr")
-        logging.warning(f"{group_id} ({group_name}): Port {from_port} open to {cidr}")
+        issues = item.get("issues", [])
+
+        for issue in issues:
+            issue_id = issue.get("id", "<unknown>")
+            raw = issue.get("raw_data", {})
+            from_port = raw.get("from_port")
+            cidr = raw.get("cidr") or raw.get("CidrIp") or raw.get("CidrIpv6")
+
+            msg = f"{group_id} ({group_name}) — {issue_id}"
+            if from_port is not None and cidr:
+                msg += f": port {from_port} open to {cidr}"
+            logging.warning(msg)
     return results
+
 
 def main():
     parser = argparse.ArgumentParser(description="Cloud Misconfiguration Scanner")

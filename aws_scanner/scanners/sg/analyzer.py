@@ -1,4 +1,4 @@
-# aws_scanner/scanners/sg/sg_analyzer.py
+# aws_scanner/scanners/sg/analyzer.py
 
 from typing import List, Dict
 from aws_scanner.scanners.sg.security_group_data import SecurityGroupData
@@ -24,9 +24,12 @@ def check_open_ipv4(rule, sg, findings):
     for ip_range in rule.get("IpRanges", []):
         cidr = ip_range.get("CidrIp")
         if is_open_cidr(cidr) and (from_port in DANGEROUS_PORTS or is_all_ports(from_port, to_port, protocol)):
-            findings.append(VULNERABILITIES["SG_OPEN_PORT"].instantiate(
+            finding = VULNERABILITIES["SG_OPEN_PORT"].instantiate(
                 sg.group_id, raw_data={"cidr": cidr, "from_port": from_port, "to_port": to_port}
-            ))
+            )
+            if sg.group_name == "default":
+                finding["is_default"] = True
+            findings.append(finding)
 
 def check_open_ipv6(rule, sg, findings):
     from_port = rule.get("FromPort")
@@ -35,18 +38,51 @@ def check_open_ipv6(rule, sg, findings):
     for ip_range in rule.get("Ipv6Ranges", []):
         cidr = ip_range.get("CidrIpv6")
         if is_open_cidr(cidr) and (from_port in DANGEROUS_PORTS or is_all_ports(from_port, to_port, protocol)):
-            findings.append(VULNERABILITIES["SG_OPEN_PORT"].instantiate(
+            finding = VULNERABILITIES["SG_OPEN_PORT"].instantiate(
                 sg.group_id, raw_data={"cidr": cidr, "from_port": from_port, "to_port": to_port}
-            ))
+            )
+            if sg.group_name == "default":
+                finding["is_default"] = True
+            findings.append(finding)
 
 def check_cross_account_references(rule, sg, findings):
     for pair in rule.get("UserIdGroupPairs", []):
         user_id = pair.get("UserId")
         group_id = pair.get("GroupId")
         if user_id and user_id != sg.owner_id:
-            findings.append(VULNERABILITIES["CROSS_ACCOUNT_SG_REFERENCE"].instantiate(
+            finding = VULNERABILITIES["CROSS_ACCOUNT_SG_REFERENCE"].instantiate(
                 sg.group_id, raw_data={"user_id": user_id, "group_id": group_id}
-            ))
+            )
+            if sg.group_name == "default":
+                finding["is_default"] = True
+            findings.append(finding)
+
+def check_internal_all_ports(rule, sg, findings):
+    from_port = rule.get("FromPort")
+    to_port = rule.get("ToPort")
+    protocol = rule.get("IpProtocol")
+
+    if is_all_ports(from_port, to_port, protocol):
+        has_public_cidr = False
+
+        for ip_range in rule.get("IpRanges", []):
+            cidr = ip_range.get("CidrIp")
+            if is_open_cidr(cidr):
+                has_public_cidr = True
+
+        for ip_range in rule.get("Ipv6Ranges", []):
+            cidr = ip_range.get("CidrIpv6")
+            if is_open_cidr(cidr):
+                has_public_cidr = True
+
+        if not has_public_cidr:
+            finding = VULNERABILITIES["SG_ALL_PORTS_INTERNAL"].instantiate(
+                sg.group_id, raw_data={"from_port": from_port, "to_port": to_port, "protocol": protocol}
+            )
+            if sg.group_name == "default":
+                finding["is_default"] = True
+            findings.append(finding)
+
 
 def analyze_sg(sg: SecurityGroupData) -> List[Dict]:
     findings = []
@@ -54,4 +90,5 @@ def analyze_sg(sg: SecurityGroupData) -> List[Dict]:
         check_open_ipv4(rule, sg, findings)
         check_open_ipv6(rule, sg, findings)
         check_cross_account_references(rule, sg, findings)
+        check_internal_all_ports(rule, sg, findings)
     return findings
