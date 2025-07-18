@@ -14,7 +14,7 @@ class TestS3Scanner:
             side_effect=lambda x: {"bucket": x["Name"], "public": False}
         )
 
-        result = find_public_s3_buckets()
+        result = find_public_s3_buckets(None)
 
         assert len(result) == 2
         assert all(r["public"] is False for r in result)
@@ -30,7 +30,7 @@ class TestS3Scanner:
             )
         )
 
-        result = find_public_s3_buckets()
+        result = find_public_s3_buckets(None)
         assert len(result) == 1
         assert result[0]["bucket"] == "<collection_error>"
 
@@ -49,7 +49,7 @@ class TestS3Scanner:
             )
         )
 
-        result = find_public_s3_buckets()
+        result = find_public_s3_buckets(None)
         assert len(result) == 1
         assert result[0]["bucket"] == "problem-bucket"
         assert "AnalyzeError" in result[0]["error"]

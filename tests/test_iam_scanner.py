@@ -20,7 +20,7 @@ def test_find_overpermissive_roles_normal():
         {"role": "Role2", "findings": []}
     ])
 
-    results = find_overpermissive_roles()
+    results = find_overpermissive_roles(None)
     assert len(results) == 2
     assert all(r["role"] in ["Role1", "Role2"] for r in results)
 
@@ -35,7 +35,7 @@ def test_find_overpermissive_roles_collect_error():
         side_effect=ClientError({'Error': {'Code': 'AccessDenied'}}, 'operation')
     )
 
-    results = find_overpermissive_roles()
+    results = find_overpermissive_roles(None)
     assert len(results) == 1
     assert results[0]["role"] == "<error>"
     assert "AccessDenied" in results[0]["error"]
@@ -57,7 +57,7 @@ def test_find_overpermissive_roles_analyze_error():
         side_effect=Exception("Analysis failed")
     )
 
-    results = find_overpermissive_roles()
+    results = find_overpermissive_roles(None)
     assert len(results) == 1
     assert results[0]["role"] == "ProblemRole"
     assert "Analysis failed" in results[0]["error"]

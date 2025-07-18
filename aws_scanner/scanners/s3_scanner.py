@@ -1,9 +1,11 @@
+import logging
+import sys
 import botocore.exceptions
 
 from .s3.collector import collect_s3_bucket_data
 from .s3.analyzer import analyze_s3_bucket
 
-def find_public_s3_buckets(s3_client=None):
+def find_public_s3_buckets(config):
     results = []
 
     try:
@@ -26,4 +28,27 @@ def find_public_s3_buckets(s3_client=None):
             "error": str(e)
         })
 
+    return results
+
+def run_s3_scanner(config):
+    logging.info("Scanning S3 buckets for public access...")
+    try:
+        results = find_public_s3_buckets(config)
+    except botocore.exceptions.NoCredentialsError:
+        logging.critical("No AWS credentials found. Aborting S3 scan.")
+        sys.exit(1)
+    except botocore.exceptions.EndpointConnectionError as e:
+        logging.critical(f"S3 endpoint error: {e}")
+        sys.exit(1)
+
+    for item in results:
+        bucket = item["bucket"]
+        if item.get("error"):
+            logging.warning(f"{bucket}: ERROR — {item['error']}")
+        elif item.get("public"):
+            logging.warning(f"{bucket} is PUBLIC via {item.get('access_vector')}")
+        elif item.get("potentially_public"):
+            logging.warning(f"{bucket} is POTENTIALLY public: {item.get('reason')}")
+        else:
+            logging.info(f"{bucket} is private")
     return results
