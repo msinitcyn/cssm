@@ -96,3 +96,70 @@ python -m aws_scanner.main --html sg
 The scanner generates:
 1. JSON report with detailed findings
 2. Optional HTML summary (when using `--html` flag)
+
+## Local Development Setup
+
+### Prerequisites
+- Python 3.8+
+- pip
+- AWS credentials configured (~/.aws/credentials or environment variables)
+
+### Installation
+
+1. Clone the repository:
+```bash
+git clone https://github.com/your-repo/aws-scanner.git
+cd aws-scanner
+```
+
+2. Create and activate virtual environment:
+```bash
+python -m venv venv
+source venv/bin/activate  # Linux/MacOS
+# OR
+venv\Scripts\activate    # Windows
+```
+
+3. Install dependencies using `pyproject.toml`:
+```bash
+pip install -e .
+```
+
+4. Configure AWS credentials:
+* Create `.env` file in project root:
+```bash
+touch .env
+```
+
+* Add your AWS credentials to `.env`:
+```ini
+AWS_REGION=your_region (e.g. us-east-1)
+AWS_ACCESS_KEY_ID=your_access_key
+AWS_SECRET_ACCESS_KEY=your_secret_key
+```
+
+* Load environment variables before running:
+```bash
+source .env
+```
+
+* (Optional) Add `.env` to `.gitignore`:
+```bash
+echo ".env" >> .gitignore
+```
+
+### Running in Development Mode
+After installation, the package will be available in editable mode. You can run:
+```bash
+aws-scanner [COMMAND] [OPTIONS]
+```
+Or via module:
+```bash
+python -m aws_scanner.main [COMMAND] [OPTIONS]
+```
+
+### Testing
+Run tests with:
+```bash
+pytest tests/
+```
