@@ -39,17 +39,24 @@ The goal is to quickly detect high-risk settings that frequently lead to data le
 Run the scanner from the project root using Python:
 
 ```bash
-python -m aws_scanner.main [OPTION]
+python -m aws_scanner.main [COMMAND] [OPTIONS]
 ```
-**Options**
 
-| Flag         | Description                                                           |
-|--------------|-----------------------------------------------------------------------|
-| `--s3-only`  | Scan only S3 buckets                                                  |
-| `--iam-only` | Scan only IAM roles                                                   |
-| `--sg-only`  | Scan only security groups                                             |
-| `--all`      | Run all scanners (default if no flag is provided)                     |
-| `--output`   | Path to save the JSON report (default: `output/report.json`)          |
+### Commands
+
+| Flag    | Description                                       | Options                                   |
+|---------|---------------------------------------------------|-------------------------------------------|
+| `s3`    | Scan only S3 buckets                              |                                           |
+| `iam`   | Scan only IAM roles                               |                                           |
+| `sg`    | Scan only security groups                         | `--regions` - Comma-separated AWS regions |
+| (none)  | Run all scanners (default if no flag is provided) |                                           |
+
+### Global Options
+
+| Flag       | Description                                                  |
+|------------|--------------------------------------------------------------|
+| `--output` | Path to save the JSON report (default: `output/report.json`) |
+| `--html`   | Generate HTML summary report in addition to JSON             |
 
 ### Examples
 
@@ -61,15 +68,31 @@ python -m aws_scanner.main
 
 Run only the S3 scanner:
 ```bash
-python -m aws_scanner.main --s3-only
+python -m aws_scanner.main s3
 ```
 
 Scan IAM roles and write results to a custom file:
 ```bash
-python -m aws_scanner.main --iam-only --output results/iam_report.json
+python -m aws_scanner.main --output results/iam_report.json iam
 ```
 
-Scan security groups only:
+Scan security groups in specific regions:
 ```bash
-python -m aws_scanner.main --sg-only
+python -m aws_scanner.main sg --regions us-east-1,eu-west-1
 ```
+
+Generate HTML report along with JSON:
+```bash
+python -m aws_scanner.main --html
+```
+
+Scan security groups and generate HTML report:
+```bash
+python -m aws_scanner.main --html sg
+```
+
+## Output
+
+The scanner generates:
+1. JSON report with detailed findings
+2. Optional HTML summary (when using `--html` flag)

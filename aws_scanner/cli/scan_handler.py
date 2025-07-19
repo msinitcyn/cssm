@@ -7,34 +7,39 @@ from aws_scanner.reports.report_generator import generate_report
 
 def get_args():
     parser = argparse.ArgumentParser(description="Cloud Misconfiguration Scanner")
-    group = parser.add_mutually_exclusive_group()
-    group.add_argument('--s3-only', action='store_true', help='Scan only S3 buckets')
-    group.add_argument('--iam-only', action='store_true', help='Scan only IAM roles')
-    group.add_argument('--sg-only', action='store_true', help='Scan only security groups')
-    group.add_argument('--all', action='store_true', help='Scan everything (default if no --*-only flags)')
+    subparsers = parser.add_subparsers(dest="command", required=False, help="Scan target")
 
-    parser.add_argument('--regions', type=str, help='Comma-separated list of AWS regions to scan (SG only)')
-    parser.add_argument('--output', type=Path, default=Path("output/report.json"), help='Path to save JSON report')
-    parser.add_argument('--html', action='store_true', help='Also generate HTML summary report')
+    subparsers.add_parser("s3", help="Scan S3 buckets")
+
+    subparsers.add_parser("iam", help="Scan IAM roles")
+
+    sg_parser = subparsers.add_parser("sg", help="Scan Security Groups")
+    sg_parser.add_argument("--regions", type=str, help="Comma-separated list of AWS regions")
+
+    parser.add_argument("--output", type=Path, default=Path("output/report.json"),
+                        help="Path to save JSON report")
+    parser.add_argument("--html", action="store_true", help="Also generate HTML summary report")
 
     return parser.parse_args()
 
 def create_scan_config(args):
-    # Determine which scanners are enabled
-    run_all = not (args.s3_only or args.iam_only or args.sg_only) or args.all
-
     config = {}
+    cmd = args.command
 
-    if run_all or args.s3_only:
+    if cmd is None:
+        # No subcommand: run all
         config["s3"] = {}
-
-    if run_all or args.iam_only:
         config["iam"] = {}
-
-    if run_all or args.sg_only:
-        config["sg"] = {
-            "regions": args.regions.split(",") if args.regions else None
-        }
+        config["sg"] = {}
+    else:
+        if cmd == "s3":
+            config["s3"] = {}
+        elif cmd == "iam":
+            config["iam"] = {}
+        elif cmd == "sg":
+            config["sg"] = {
+                "regions": args.regions.split(",") if args.regions else None
+            }
 
     config["output"] = {
         "path": args.output.resolve(),
