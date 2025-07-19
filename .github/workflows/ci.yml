@@ -34,5 +34,5 @@ jobs:
 
     - name: Run linting
       run: |
-        pip install ruff black
+        pip install ruff
         ruff check .
