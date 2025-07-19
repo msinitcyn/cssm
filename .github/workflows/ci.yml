@@ -32,7 +32,7 @@ jobs:
       run: |
         docker build -t cssm-scanner .
 
-    - name: Run scanner with --all
-      run: |
-        python -m aws_scanner.main --all || echo "Scanner exited with error (no creds?)"
+#    - name: Run scanner with --all
+#      run: |
+#        python -m aws_scanner.main --all || echo "Scanner exited with error (no creds?)"
 
