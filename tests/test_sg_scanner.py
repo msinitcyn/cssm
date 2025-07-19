@@ -1,4 +1,3 @@
-import pytest
 from unittest.mock import patch, MagicMock
 
 def test_sg_scanner_integration_with_mocks():

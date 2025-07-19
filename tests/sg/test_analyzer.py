@@ -1,6 +1,6 @@
-import pytest
 from aws_scanner.scanners.sg.analyzer import analyze_sg
 from aws_scanner.scanners.sg.security_group_data import SecurityGroupData
+import aws_scanner.scanners.sg.analyzer as analyzer_mod
 
 class DummyVuln:
     def __init__(self, id):
@@ -9,7 +9,6 @@ class DummyVuln:
         return {"vuln": self.id, "group_id": group_id, **(raw_data or {})}
 
 # Patch VULNERABILITIES for test isolation
-import aws_scanner.scanners.sg.analyzer as analyzer_mod
 analyzer_mod.VULNERABILITIES = {
     "SG_OPEN_PORT": DummyVuln("SG_OPEN_PORT"),
     "CROSS_ACCOUNT_SG_REFERENCE": DummyVuln("CROSS_ACCOUNT_SG_REFERENCE"),

@@ -1,9 +1,4 @@
-import tempfile
-from pathlib import Path
-import os
 from aws_scanner.reports.html_report import generate_html_report
-
-import pytest
 
 def sample_json_data():
     return {

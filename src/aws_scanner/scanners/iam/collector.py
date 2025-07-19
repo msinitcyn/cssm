@@ -29,7 +29,7 @@ def collect_iam_roles():
                         document=policy_doc,
                         is_inline=True
                     )
-            except botocore.exceptions.ClientError as e:
+            except botocore.exceptions.ClientError:
                 inline_policies["<inline_policy_error>"] = IamPolicyData(
                     name="<inline_policy_error>",
                     policy_type="inline",

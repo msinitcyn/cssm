@@ -31,3 +31,8 @@ jobs:
     - name: Build Docker image
       run: |
         docker build -t cssm-scanner .
+
+    - name: Run linting
+      run: |
+        pip install ruff black
+        ruff check .

@@ -2,7 +2,6 @@ from unittest.mock import MagicMock
 from botocore.exceptions import ClientError
 from aws_scanner.core.boto3_wrapper import Boto3Wrapper
 from aws_scanner.scanners.iam.collector import collect_iam_roles
-from aws_scanner.scanners.iam.iam_policy_data import IamPolicyData
 
 def test_collect_iam_roles_normal():
     original_boto3 = Boto3Wrapper.get_iam

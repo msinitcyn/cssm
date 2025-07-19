@@ -1,4 +1,3 @@
-import pytest
 from types import SimpleNamespace
 
 import aws_scanner.scanners.s3.analyzer as analyzer
