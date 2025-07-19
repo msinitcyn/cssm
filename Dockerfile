@@ -5,11 +5,12 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-COPY requirements.txt .
-RUN pip install --no-cache-dir -r requirements.txt
+COPY pyproject.toml .
+COPY src ./src
 
-COPY aws_scanner ./aws_scanner
+RUN pip install --no-cache-dir .
 
-ENTRYPOINT ["python", "-m", "aws_scanner.main"]
+ENV PYTHONPATH=/app/src
 
+ENTRYPOINT ["python", "-m", "aws_scanner.cli.main"]
 CMD ["--all"]
