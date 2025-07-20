@@ -2,10 +2,12 @@ import sys
 import logging
 import botocore.exceptions
 
+from aws_scanner.core.configs import IamConfig
+
 from .iam.collector import collect_iam_roles
 from .iam.role_analyzer import analyze_iam_role
 
-def find_overpermissive_roles(config):
+def find_overpermissive_roles(config : IamConfig):
     results = []
     try:
         roles = collect_iam_roles()
@@ -24,7 +26,7 @@ def find_overpermissive_roles(config):
 
     return results
 
-def run_iam_scanner(config):
+def run_iam_scanner(config : IamConfig):
     logging.info("Scanning IAM roles for over-permissive policies...")
     try:
         results = find_overpermissive_roles(config)

@@ -2,12 +2,15 @@ import sys
 import logging
 import botocore.exceptions
 
+from aws_scanner.core.configs import SgConfig
+
 from .sg.collector import collect_security_groups
 from .sg.analyzer import analyze_sg
 
-def scan_security_groups(regions=None):
+def scan_security_groups(sgConfig: SgConfig):
+    regions = sgConfig.regions
     results = []
-    groups = collect_security_groups(regions)
+    groups = collect_security_groups(regions=regions)
     for sg in groups:
         issues = analyze_sg(sg)
         results.append({
@@ -17,12 +20,10 @@ def scan_security_groups(regions=None):
         })
     return results
 
-def run_sg_scanner(sg_config: dict):
-    regions = sg_config.get("regions")  # <-- ключевой момент
+def run_sg_scanner(sgConfig: SgConfig):
     logging.info("Scanning security groups for open ports...")
-
     try:
-        results = scan_security_groups(regions=regions)
+        results = scan_security_groups(sgConfig)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found. Aborting SG scan.")
         sys.exit(1)

@@ -2,10 +2,12 @@ import logging
 import sys
 import botocore.exceptions
 
+from aws_scanner.core.configs import S3Config
+
 from .s3.collector import collect_s3_bucket_data
 from .s3.analyzer import analyze_s3_bucket
 
-def find_public_s3_buckets(config):
+def find_public_s3_buckets(config : S3Config):
     results = []
 
     try:
@@ -30,7 +32,7 @@ def find_public_s3_buckets(config):
 
     return results
 
-def run_s3_scanner(config):
+def run_s3_scanner(config : S3Config):
     logging.info("Scanning S3 buckets for public access...")
     try:
         results = find_public_s3_buckets(config)
