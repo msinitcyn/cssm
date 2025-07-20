@@ -2,10 +2,12 @@ from dataclasses import dataclass
 from pathlib import Path
 
 @dataclass
-class IamConfig: pass
+class IamConfig:
+    pass
 
 @dataclass
-class S3Config: pass
+class S3Config:
+    pass
 
 @dataclass
 class SgConfig:
