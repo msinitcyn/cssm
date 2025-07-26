@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Cloud Misconfiguration Report</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            margin: 2em;
+            background-color: #f9f9f9;
+        }
+        h1, h2 {
+            color: #333;
+        }
+        .section {
+            margin-bottom: 2em;
+        }
+        .item {
+            background-color: #fff;
+            border-left: 5px solid #ccc;
+            padding: 1em;
+            margin-bottom: 1em;
+        }
+        .high {
+            border-left-color: #e74c3c;
+        }
+        .medium {
+            border-left-color: #f39c12;
+        }
+        .low {
+            border-left-color: #2ecc71;
+        }
+        .unknown {
+            border-left-color: #7f8c8d;
+        }
+        .clean {
+            border-left-color: #2ecc71;
+        }
+        .label {
+            font-weight: bold;
+        }
+        code {
+            background: #eee;
+            padding: 0.1em 0.3em;
+            border-radius: 4px;
+        }
+        .error {
+            color: #e74c3c;
+        }
+    </style>
+</head>
+<body>
+    <h1>Cloud Misconfiguration Report</h1>
+
+    {% if s3_buckets %}
+    <div class="section">
+        <h2>S3 Buckets</h2>
+        {% for bucket in s3_buckets %}
+            {% if bucket.error %}
+            <div class="item error">
+                <div><span class="label">Bucket:</span> <code>{{ bucket.bucket }}</code></div>
+                <div class="error">Error: {{ bucket.error }}</div>
+            </div>
+            {% elif not bucket.vulnerabilities %}
+            <div class="item clean">
+                <div><span class="label">Bucket:</span> <code>{{ bucket.bucket }}</code></div>
+                <div>No vulnerabilities found</div>
+            </div>
+            {% else %}
+                {% for vuln in bucket.vulnerabilities %}
+                <div class="item {{ vuln.severity | lower | default('unknown') }}">
+                    <div><span class="label">Bucket:</span> <code>{{ bucket.bucket }}</code></div>
+                    <div><span class="label">Description:</span> {{ vuln.description }}</div>
+                    <div><span class="label">Severity:</span> {{ vuln.severity or "unknown" }}</div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if iam_roles %}
+    <div class="section">
+        <h2>IAM Roles</h2>
+        {% for role in iam_roles %}
+            {% if role.error %}
+            <div class="item error">
+                <div><span class="label">Role:</span> <code>{{ role.role }}</code></div>
+                <div class="error">Error: {{ role.error }}</div>
+            </div>
+            {% elif not role.vulnerabilities %}
+            <div class="item clean">
+                <div><span class="label">Role:</span> <code>{{ role.role }}</code></div>
+                <div>No vulnerabilities found</div>
+            </div>
+            {% else %}
+                {% for vuln in role.vulnerabilities %}
+                <div class="item {{ vuln.severity | lower | default('unknown') }}">
+                    <div><span class="label">Role:</span> <code>{{ role.role }}</code></div>
+                    <div><span class="label">Description:</span> {{ vuln.description }}</div>
+                    <div><span class="label">Severity:</span> {{ vuln.severity or "unknown" }}</div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if iam_policies %}
+    <div class="section">
+        <h2>IAM Policies</h2>
+        {% for policy in iam_policies %}
+            {% if policy.error %}
+            <div class="item error">
+                <div><span class="label">Policy ARN:</span> <code>{{ policy.policy }}</code></div>
+                <div><span class="label">Policy Name:</span> {{ policy.policy_name }}</div>
+                <div class="error">Error: {{ policy.error }}</div>
+            </div>
+            {% elif not policy.vulnerabilities %}
+            <div class="item clean">
+                <div><span class="label">Policy ARN:</span> <code>{{ policy.policy }}</code></div>
+                <div><span class="label">Policy Name:</span> {{ policy.policy_name }}</div>
+                <div>No vulnerabilities found</div>
+            </div>
+            {% else %}
+                {% for vuln in policy.vulnerabilities %}
+                <div class="item {{ vuln.severity | lower | default('unknown') }}">
+                    <div><span class="label">Policy:</span> <code>{{ policy.policy }}</code></div>
+                    <div><span class="label">Policy Name:</span> {{ policy.policy_name }}</div>
+                    <div><span class="label">Description:</span> {{ vuln.description }}</div>
+                    <div><span class="label">Severity:</span> {{ vuln.severity or "unknown" }}</div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if security_groups %}
+    <div class="section">
+        <h2>Security Groups</h2>
+        {% for sg in security_groups %}
+            {% if sg.error %}
+            <div class="item error">
+                <div><span class="label">Group ID:</span> <code>{{ sg.group_id }}</code></div>
+                <div><span class="label">Group Name:</span> {{ sg.group_name }}</div>
+                <div class="error">Error: {{ sg.error }}</div>
+            </div>
+            {% elif not sg.vulnerabilities %}
+            <div class="item clean">
+                <div><span class="label">Group ID:</span> <code>{{ sg.group_id }}</code></div>
+                <div><span class="label">Group Name:</span> {{ sg.group_name }}</div>
+                <div>No vulnerabilities found</div>
+            </div>
+            {% else %}
+                {% for vuln in sg.vulnerabilities %}
+                <div class="item {{ vuln.severity | lower | default('unknown') }}">
+                    <div><span class="label">Group ID:</span> <code>{{ sg.group_id }}</code></div>
+                    <div><span class="label">Group Name:</span> {{ sg.group_name }}</div>
+                    <div><span class="label">Description:</span> {{ vuln.description }}</div>
+                    <div><span class="label">Severity:</span> {{ vuln.severity or "unknown" }}</div>
+                </div>
+                {% endfor %}
+            {% endif %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</body>
+</html>

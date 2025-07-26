@@ -2,34 +2,34 @@ import sys
 import logging
 import botocore.exceptions
 
-from aws_scanner.core.configs import S3Config
-from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-from aws_scanner.engines.s3.analyzer import analyze_s3_bucket
+from aws_scanner.core.configs import IamRoleConfig
+from aws_scanner.engines.iam_role.collector import collect_iam_roles
+from aws_scanner.engines.iam_role.analyzer import analyze_iam_role
 
-def find_issues(s3_config: S3Config):
+def find_issues(iam_role_config: IamRoleConfig):
     results = []
     try:
-        items = collect_s3_bucket_data()
+        items = collect_iam_roles()
         for item in items:
             try:
-                findings = analyze_s3_bucket(item)
+                findings = analyze_iam_role(item)
                 results.append({
-                    "bucket_name": item.name,
+                    "role_name": item.name,
                     "vulnerabilities": findings
                 })
             except Exception as e:
                 results.append({
-                    "bucket_name": item.name,
+                    "role_name": item.name,
                     "error": str(e)
                 })
     except Exception as e:
         results.append({"error": str(e)})
     return results
 
-def run_scanner(s3_config: S3Config):
-    logging.info("Starting S3 scanner")
+def run_scanner(iam_role_config: IamRoleConfig):
+    logging.info("Starting IAM role scanner")
     try:
-        results = find_issues(s3_config)
+        results = find_issues(iam_role_config)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found")
         sys.exit(1)
@@ -39,10 +39,10 @@ def run_scanner(s3_config: S3Config):
 
     for result in results:
         if "error" in result:
-            logging.error(f"Error scanning {result.get('bucket_name')}: {result['error']}")
+            logging.error(f"Error scanning {result.get('role_name')}: {result['error']}")
             continue
 
         for vuln in result.get("vulnerabilities", []):
-            logging.warning(f"Bucket {result['bucket_name']}: {vuln.get('description', 'Unknown vulnerability')}")
+            logging.warning(f"Role {result['role_name']}: {vuln.get('description', 'Unknown vulnerability')}")
 
     return results

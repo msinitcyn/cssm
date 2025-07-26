@@ -2,7 +2,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 @dataclass
-class IamConfig:
+class IamPolicyConfig:
+    attached_only: bool = False
+
+@dataclass
+class IamRoleConfig:
     pass
 
 @dataclass
@@ -21,6 +25,7 @@ class ReportConfig:
 @dataclass
 class RunConfig:
     s3: S3Config | None
-    iam: IamConfig | None
+    iam_role: IamRoleConfig | None
+    iam_policy: IamPolicyConfig | None
     sg: SgConfig | None
     report: ReportConfig

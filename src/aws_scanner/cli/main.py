@@ -1,6 +1,6 @@
+from aws_scanner.scanners.scan_orchestrator import run_scan
 from .cli_parser import get_args
 from .config_builder import create_run_config
-from .runner import run_scan
 
 def main():
     args = get_args()

@@ -3,52 +3,48 @@ import logging
 import botocore.exceptions
 
 from aws_scanner.core.configs import SgConfig
+from aws_scanner.engines.sg.collector import collect_security_groups
+from aws_scanner.engines.sg.analyzer import analyze_sg
 
-from .sg.collector import collect_security_groups
-from .sg.analyzer import analyze_sg
-
-def scan_security_groups(sgConfig: SgConfig):
-    regions = sgConfig.regions
+def find_issues(sg_config: SgConfig):
     results = []
-    groups = collect_security_groups(regions=regions)
-    for sg in groups:
-        issues = analyze_sg(sg)
-        results.append({
-            "group_id": sg.group_id,
-            "group_name": sg.group_name,
-            "issues": issues
-        })
+    try:
+        items = collect_security_groups(regions=sg_config.regions)
+        for item in items:
+            try:
+                findings = analyze_sg(item)
+                results.append({
+                    "group_id": item.group_id,
+                    "group_name": item.group_name,
+                    "vulnerabilities": findings
+                })
+            except Exception as e:
+                results.append({
+                    "group_id": item.group_id,
+                    "group_name": item.group_name,
+                    "error": str(e)
+                })
+    except Exception as e:
+        results.append({"error": str(e)})
     return results
 
-def run_sg_scanner(sgConfig: SgConfig):
-    logging.info("Scanning security groups for open ports...")
+def run_scanner(sg_config: SgConfig):
+    logging.info("Starting Security Group scanner")
     try:
-        results = scan_security_groups(sgConfig)
+        results = find_issues(sg_config)
     except botocore.exceptions.NoCredentialsError:
-        logging.critical("No AWS credentials found. Aborting SG scan.")
+        logging.critical("No AWS credentials found")
         sys.exit(1)
     except botocore.exceptions.EndpointConnectionError as e:
-        logging.critical(f"SG endpoint error: {e}")
+        logging.critical(f"Connection error: {e}")
         sys.exit(1)
 
-    for item in results:
-        if "error" in item:
-            logging.warning(f"Security group scan error: {item['error']}")
+    for result in results:
+        if "error" in result:
+            logging.error(f"Error scanning {result.get('group_id')}: {result['error']}")
             continue
 
-        group_id = item.get("group_id", "<unknown>")
-        group_name = item.get("group_name", "")
-        issues = item.get("issues", [])
-
-        for issue in issues:
-            issue_id = issue.get("id", "<unknown>")
-            raw = issue.get("raw_data", {})
-            from_port = raw.get("from_port")
-            cidr = raw.get("cidr") or raw.get("CidrIp") or raw.get("CidrIpv6")
-
-            msg = f"{group_id} ({group_name}) — {issue_id}"
-            if from_port is not None and cidr:
-                msg += f": port {from_port} open to {cidr}"
-            logging.warning(msg)
+        for vuln in result.get("vulnerabilities", []):
+            logging.warning(f"SG {result['group_id']} ({result['group_name']}): {vuln.get('description', 'Unknown vulnerability')}")
 
     return results

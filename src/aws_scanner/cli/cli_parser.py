@@ -1,5 +1,6 @@
 import argparse
 from pathlib import Path
+import sys
 
 def get_args():
     parser = argparse.ArgumentParser(description="Cloud Misconfiguration Scanner")
@@ -7,7 +8,11 @@ def get_args():
 
     subparsers.add_parser("s3", help="Scan S3 buckets")
 
-    subparsers.add_parser("iam", help="Scan IAM roles")
+    iam_parser = subparsers.add_parser("iam", help="Scan IAM roles")
+    iam_parser.add_argument("--policies-only", action="store_true",
+                            help="Scan only policies without checking trust relationships")
+    iam_parser.add_argument("--attached-only", action="store_true",
+                            help="Limit scan to only policies attached to roles (requires --policies-only)")
 
     sg_parser = subparsers.add_parser("sg", help="Scan Security Groups")
     sg_parser.add_argument("--regions", type=str, help="Comma-separated list of AWS regions")
@@ -16,4 +21,11 @@ def get_args():
                         help="Path to save JSON report")
     parser.add_argument("--html", action="store_true", help="Also generate HTML summary report")
 
-    return parser.parse_args()
+    args = parser.parse_args()
+
+    if args.command == "iam":
+        if args.attached_only and not args.policies_only:
+            print("Error: --attached-only can only be used together with --policies-only", file=sys.stderr)
+            sys.exit(1)
+
+    return args

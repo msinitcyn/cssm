@@ -1,5 +1,3 @@
-# aws_scanner/core/vulnerabilities.py
-
 from dataclasses import dataclass
 from typing import Optional, Dict
 
