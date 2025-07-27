@@ -21,6 +21,7 @@ credentials
 .DS_Store
 
 output/
+input/
 .qodo
 
 .env

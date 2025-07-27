@@ -1,21 +1,24 @@
 from dataclasses import dataclass
 from pathlib import Path
+from typing import Optional
 
 @dataclass
 class IamPolicyConfig:
-    attached_only: bool = False
+    attached_only: bool
+    file: Optional[str] = None
 
 @dataclass
 class IamRoleConfig:
-    pass
+    file: Optional[str] = None
 
 @dataclass
 class S3Config:
-    pass
+    file: Optional[str] = None
 
 @dataclass
 class SgConfig:
     regions: list[str] | None
+    file: Optional[str] = None
 
 @dataclass
 class ReportConfig:
