@@ -31,7 +31,11 @@ Milestone 6: S3 context awareness
 [ ] Rule-based risk evaluation for S3
 
 Milestone 7: Lightweight tooling extensions
-[ ] Standalone CLI for local IAM policy analysis
+[x] Standalone CLI for local IAM policy analysis
+[ ] Detect overbroad "Resource": "*" in sensitive actions (e.g., S3, IAM, KMS)
+[ ] Semantic validation of IAM policy fields (Effect, Action, Resource, etc.)
+[ ] Warning if malformed or unknown values used in policy documents
+[ ] Update HTML/JSON report to include malformed status or validation issues
 [ ] Snapshot diffing
 [ ] Optional ignore-list (known public resources)
 
@@ -114,6 +118,18 @@ Rule-based risk evaluation for S3
 
 Standalone CLI for local IAM policy analysis
 — A script that accepts local JSON IAM policy and runs analysis without needing AWS credentials.
+
+Detect overbroad "Resource": "*" in sensitive actions
+— Flag policies where sensitive actions (like s3:PutObject, iam:PassRole, sts:AssumeRole, etc.) are granted on Resource: "*". These are common misconfigurations that lead to data leaks or privilege escalation. Mark as high risk.
+
+Semantic validation of IAM policy fields
+— Validate that fields like Effect, Action, Resource, and Condition use allowed values. For example, "Effect": "MAllow" should be flagged as invalid. Helps avoid silent policy parsing failures.
+
+Warning on malformed policy fields
+— Add a warning section in the output if unknown keys or invalid structures are found inside IAM policy JSON. Increases trust in the output and highlights policy bugs early.
+
+Update HTML/JSON report with policy validation results
+— If policy is malformed or semantically invalid, add clear visual indicator in the report (e.g., ⚠️ Invalid policy syntax) and optionally fail the scan if critical.
 
 Snapshot diffing
 — Track changes in scanned resources over time. Example: "bucket X was private, now public". Use hash or JSON diff.
