@@ -8,22 +8,19 @@ from aws_scanner.engines.iam_role.analyzer import analyze_iam_role
 
 def find_issues(iam_role_config: IamRoleConfig):
     results = []
-    try:
-        items = collect_iam_roles()
-        for item in items:
-            try:
-                findings = analyze_iam_role(item)
-                results.append({
-                    "role_name": item.name,
-                    "vulnerabilities": findings
-                })
-            except Exception as e:
-                results.append({
-                    "role_name": item.name,
-                    "error": str(e)
-                })
-    except Exception as e:
-        results.append({"error": str(e)})
+    items = collect_iam_roles()
+    for item in items:
+        try:
+            findings = analyze_iam_role(item)
+            results.append({
+                "role_name": item.name,
+                "vulnerabilities": findings
+            })
+        except Exception as e:
+            results.append({
+                "role_name": item.name,
+                "error": str(e)
+            })
     return results
 
 def run_scanner(iam_role_config: IamRoleConfig):
@@ -35,6 +32,9 @@ def run_scanner(iam_role_config: IamRoleConfig):
         sys.exit(1)
     except botocore.exceptions.EndpointConnectionError as e:
         logging.critical(f"Connection error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logging.critical(f"Unexpected error: {e}")
         sys.exit(1)
 
     for result in results:

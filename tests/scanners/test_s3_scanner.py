@@ -50,20 +50,6 @@ def test_find_issues_analyzer_error():
         mock_analyze.assert_called_once()
 
 
-def test_find_issues_collector_error():
-    mock_s3_config = MagicMock()
-
-    with patch("aws_scanner.scanners.s3_scanner.collect_s3_bucket_data", side_effect=Exception("Collection failed")) as mock_collect:
-        from aws_scanner.scanners.s3_scanner import find_issues
-        results = find_issues(mock_s3_config)
-
-        assert len(results) == 1
-        assert "error" in results[0]
-        assert results[0]["error"] == "Collection failed"
-
-        mock_collect.assert_called_once()
-
-
 def test_run_scanner_success():
     mock_s3_config = MagicMock()
     mock_results = [

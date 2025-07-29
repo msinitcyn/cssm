@@ -30,8 +30,8 @@ def get_args():
             print("Error: --attached-only can only be used together with --policies-only", file=sys.stderr)
             sys.exit(1)
 
-        if args.file and (args.policies_only or args.attached_only):
-            print("Error: --file cannot be combined with --policies-only or --attached-only", file=sys.stderr)
-            sys.exit(1)
+        #if args.file and (args.policies_only or args.attached_only):
+        #    print("Error: --file cannot be combined with --policies-only or --attached-only", file=sys.stderr)
+        #    sys.exit(1)
 
     return args

@@ -8,22 +8,19 @@ from aws_scanner.engines.s3.analyzer import analyze_s3_bucket
 
 def find_issues(s3_config: S3Config):
     results = []
-    try:
-        items = collect_s3_bucket_data()
-        for item in items:
-            try:
-                findings = analyze_s3_bucket(item)
-                results.append({
-                    "bucket_name": item.name,
-                    "vulnerabilities": findings
-                })
-            except Exception as e:
-                results.append({
-                    "bucket_name": item.name,
-                    "error": str(e)
-                })
-    except Exception as e:
-        results.append({"error": str(e)})
+    items = collect_s3_bucket_data()
+    for item in items:
+        try:
+            findings = analyze_s3_bucket(item)
+            results.append({
+                "bucket_name": item.name,
+                "vulnerabilities": findings
+            })
+        except Exception as e:
+            results.append({
+                "bucket_name": item.name,
+                "error": str(e)
+            })
     return results
 
 def run_scanner(s3_config: S3Config):
@@ -35,6 +32,9 @@ def run_scanner(s3_config: S3Config):
         sys.exit(1)
     except botocore.exceptions.EndpointConnectionError as e:
         logging.critical(f"Connection error: {e}")
+        sys.exit(1)
+    except Exception as e:
+        logging.critical(f"Unexpected error: {e}")
         sys.exit(1)
 
     for result in results:

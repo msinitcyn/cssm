@@ -42,16 +42,6 @@ def test_find_issues_analyzer_error():
         assert results[0]["role_name"] == "test-role"
         assert results[0]["error"] == "Analysis error"
 
-def test_find_issues_collector_error():
-    mock_config = MagicMock()
-
-    with patch("aws_scanner.scanners.iam_role_scanner.collect_iam_roles", side_effect=Exception("Collection error")):
-        from aws_scanner.scanners.iam_role_scanner import find_issues
-        results = find_issues(mock_config)
-
-        assert len(results) == 1
-        assert "error" in results[0]
-        assert results[0]["error"] == "Collection error"
 
 def test_run_scanner_success():
     mock_config = MagicMock()

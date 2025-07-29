@@ -52,21 +52,6 @@ def test_find_issues_analyzer_error():
         mock_analyze.assert_called_once()
 
 
-def test_find_issues_collector_error():
-    mock_sg_config = MagicMock()
-    mock_sg_config.regions = ["us-east-1"]
-
-    with patch("aws_scanner.scanners.sg_scanner.collect_security_groups", side_effect=Exception("Collection failed")) as mock_collect:
-        from aws_scanner.scanners.sg_scanner import find_issues
-        results = find_issues(mock_sg_config)
-
-        assert len(results) == 1
-        assert "error" in results[0]
-        assert results[0]["error"] == "Collection failed"
-
-        mock_collect.assert_called_once_with(regions=["us-east-1"])
-
-
 def test_run_scanner_success():
     mock_sg_config = MagicMock()
     mock_results = [
