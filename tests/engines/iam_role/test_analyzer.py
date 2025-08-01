@@ -245,7 +245,7 @@ def test_analyze_iam_role_with_inline_policies():
 
     role_data = IamRoleData(
         name="test-role",
-        inline_policies={"inline-policy": inline_policy}
+        inline_policies=[inline_policy]
     )
 
     with patch("aws_scanner.engines.iam_role.analyzer.analyze_policy") as mock_analyze:
@@ -270,7 +270,7 @@ def test_analyze_iam_role_with_attached_policies():
 
     role_data = IamRoleData(
         name="test-role",
-        attached_policies={"attached-policy": attached_policy}
+        attached_policies=[attached_policy]
     )
 
     with patch("aws_scanner.engines.iam_role.analyzer.analyze_policy") as mock_analyze:
@@ -311,8 +311,8 @@ def test_analyze_iam_role_comprehensive():
     role_data = IamRoleData(
         name="test-role",
         trust_policy_document=trust_policy,
-        inline_policies={"inline-policy": inline_policy},
-        attached_policies={"attached-policy": attached_policy}
+        inline_policies=[inline_policy],
+        attached_policies=[attached_policy]
     )
 
     with patch("aws_scanner.engines.iam_role.analyzer.VULNERABILITIES") as mock_vuln:
@@ -326,7 +326,6 @@ def test_analyze_iam_role_comprehensive():
             findings = analyze_iam_role(role_data)
 
             assert len(findings) == 3
-            # One from trust policy, one from inline, one from attached
             trust_findings = [f for f in findings if f.get("type") == "IAM_ROLE_BROAD_ASSUME_ROLE"]
             policy_findings = [f for f in findings if f.get("type") == "policy_finding"]
             assert len(trust_findings) == 1
@@ -352,7 +351,7 @@ def test_analyze_iam_role_multiple_policy_findings():
 
     role_data = IamRoleData(
         name="test-role",
-        inline_policies={"inline-policy": inline_policy}
+        inline_policies=[inline_policy]
     )
 
     with patch("aws_scanner.engines.iam_role.analyzer.analyze_policy") as mock_analyze:

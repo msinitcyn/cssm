@@ -3,12 +3,20 @@ import logging
 import botocore.exceptions
 
 from aws_scanner.core.configs import IamRoleConfig
-from aws_scanner.engines.iam_role.collector import collect_iam_roles
 from aws_scanner.engines.iam_role.analyzer import analyze_iam_role
 
-def find_issues(iam_role_config: IamRoleConfig):
+from aws_scanner.core.boto3_wrapper import Boto3Wrapper
+
+from aws_scanner.engines.iam_role.aws_iam_role_collector import AwsIamRoleCollector
+from aws_scanner.engines.iam_role.file_iam_role_collector import FileIamRoleCollector
+
+def get_collector(config: IamRoleConfig, boto3_wrapper: Boto3Wrapper):
+    if config.file:
+        return FileIamRoleCollector(config.file)
+    return AwsIamRoleCollector(boto3_wrapper)
+
+def analyze_policies(items):
     results = []
-    items = collect_iam_roles()
     for item in items:
         try:
             findings = analyze_iam_role(item)
@@ -23,10 +31,13 @@ def find_issues(iam_role_config: IamRoleConfig):
             })
     return results
 
-def run_scanner(iam_role_config: IamRoleConfig):
+def run_scanner(iam_role_config: IamRoleConfig, boto3_wrapper: Boto3Wrapper):
     logging.info("Starting IAM role scanner")
+
     try:
-        results = find_issues(iam_role_config)
+        collector = get_collector(iam_role_config, boto3_wrapper)
+        items = collector.collect()
+        results = analyze_policies(items)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found")
         sys.exit(1)
