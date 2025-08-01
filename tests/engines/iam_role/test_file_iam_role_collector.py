@@ -1,6 +1,4 @@
 import json
-import tempfile
-import os
 from unittest.mock import patch, mock_open
 from aws_scanner.engines.iam_role.file_iam_role_collector import FileIamRoleCollector
 
@@ -104,7 +102,7 @@ def test_collect_iam_roles_file_not_found():
     collector = FileIamRoleCollector("nonexistent_file.json")
     
     try:
-        results = collector.collect()
+        collector.collect()
         assert False, "Expected FileNotFoundError"
     except FileNotFoundError:
         pass
@@ -115,7 +113,7 @@ def test_collect_iam_roles_invalid_json():
         collector = FileIamRoleCollector("test_file.json")
         
         try:
-            results = collector.collect()
+            collector.collect()
             assert False, "Expected json.JSONDecodeError"
         except json.JSONDecodeError:
             pass

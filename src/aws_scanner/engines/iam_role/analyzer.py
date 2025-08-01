@@ -2,7 +2,6 @@ from typing import Dict, Any, List
 from .iam_role_data import IamRoleData
 from aws_scanner.engines.common.policy_analyzer_utils import analyze_policy, is_restrictive
 from aws_scanner.core.vulnerabilities import VULNERABILITIES
-from aws_scanner.engines.common.iam_policy_data import IamPolicyData
 
 def analyze_assume_role_policy(trust_policy: Dict[str, Any]) -> List[Dict[str, Any]]:
     findings = []

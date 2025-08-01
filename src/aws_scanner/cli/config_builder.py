@@ -16,7 +16,7 @@ def build_s3_config(args) -> Optional[S3Config]:
     return S3Config(file=getattr(args, "file", None))
 
 def build_iam_role_config(args) -> Optional[IamRoleConfig]:
-    if args.command not in (None, "iam") or hasattr(args, "policies_only") and args.policies_only == True:
+    if args.command not in (None, "iam") or hasattr(args, "policies_only") and args.policies_only:
         return None
 
     attached_only = getattr(args, 'attached_only', False)
@@ -26,7 +26,7 @@ def build_iam_role_config(args) -> Optional[IamRoleConfig]:
     return IamRoleConfig(file=getattr(args, "file", None))
 
 def build_iam_policy_config(args) -> Optional[IamPolicyConfig]:
-    if args.command not in (None, "iam") or not hasattr(args, "policies_only") or args.policies_only == False:
+    if args.command not in (None, "iam") or not hasattr(args, "policies_only") or not args.policies_only:
         return None
 
     attached_only = getattr(args, 'attached_only', False)

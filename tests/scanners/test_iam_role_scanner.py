@@ -41,7 +41,7 @@ def test_get_collector_file():
 
     with patch("aws_scanner.scanners.iam_role_scanner.FileIamRoleCollector") as mock_file_collector:
         from aws_scanner.scanners.iam_role_scanner import get_collector
-        collector = get_collector(mock_config, mock_boto3_wrapper)
+        get_collector(mock_config, mock_boto3_wrapper)
         
         mock_file_collector.assert_called_once_with("test_file.json")
 
@@ -52,7 +52,7 @@ def test_get_collector_aws():
 
     with patch("aws_scanner.scanners.iam_role_scanner.AwsIamRoleCollector") as mock_aws_collector:
         from aws_scanner.scanners.iam_role_scanner import get_collector
-        collector = get_collector(mock_config, mock_boto3_wrapper)
+        get_collector(mock_config, mock_boto3_wrapper)
         
         mock_aws_collector.assert_called_once_with(mock_boto3_wrapper)
 

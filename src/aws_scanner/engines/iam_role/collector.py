@@ -1,8 +1,6 @@
 import botocore.exceptions
-from typing import Dict
 
 from aws_scanner.core.boto3_wrapper import Boto3Wrapper
-from aws_scanner.core.configs import IamPolicyConfig
 from aws_scanner.engines.common.iam_policy_data import IamPolicyData
 from .iam_role_data import IamRoleData
 
