@@ -2,6 +2,7 @@ import botocore.exceptions
 import json
 
 from aws_scanner.core.boto3_wrapper import Boto3Wrapper
+from aws_scanner.engines.common.iam_policy_data import IamPolicyData
 from .s3_bucket_data import S3BucketData
 
 def collect_s3_bucket_data(bucket_name:str=None):
@@ -31,9 +32,20 @@ def collect_s3_bucket_data(bucket_name:str=None):
         except botocore.exceptions.ClientError:
             pass
 
+        policy = None
         try:
             policy_str = s3.get_bucket_policy(Bucket=name).get("Policy")
-            policy = json.loads(policy_str) if policy_str else None
+            if policy_str:
+                try:
+                    policy = IamPolicyData(
+                        name=f"{name}-bucket-policy",
+                        policy_type="resource",
+                        document=json.loads(policy_str),
+                        arn=None,
+                        is_inline=False
+                    )
+                except json.JSONDecodeError:
+                    pass
         except botocore.exceptions.ClientError:
             pass
 
@@ -51,9 +63,9 @@ def collect_s3_bucket_data(bucket_name:str=None):
             name=name,
             pab_config=pab,
             acl_grants=acl,
-            policy_doc=policy,
+            policy=policy,
             cors_config=cors,
             website_config=website
         ))
-
+    
     return results
