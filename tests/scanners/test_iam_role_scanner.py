@@ -21,6 +21,7 @@ def test_analyze_policies_success():
         assert results[1]["role_name"] == "role2"
         assert results[1]["vulnerabilities"] == mock_findings2
 
+
 def test_analyze_policies_analyzer_error():
     mock_role = MagicMock()
     mock_role.name = "test-role"
@@ -45,6 +46,7 @@ def test_get_collector_file():
         
         mock_file_collector.assert_called_once_with("test_file.json")
 
+
 def test_get_collector_aws():
     mock_config = MagicMock()
     mock_config.file = None
@@ -55,6 +57,7 @@ def test_get_collector_aws():
         get_collector(mock_config, mock_boto3_wrapper)
         
         mock_aws_collector.assert_called_once_with(mock_boto3_wrapper)
+
 
 def test_run_scanner_success():
     mock_config = MagicMock()
@@ -77,6 +80,7 @@ def test_run_scanner_success():
         results = run_scanner(mock_config, mock_boto3_wrapper)
         assert results == mock_results
 
+
 def test_run_scanner_no_credentials():
     mock_config = MagicMock()
     mock_boto3_wrapper = MagicMock()
@@ -96,6 +100,7 @@ def test_run_scanner_no_credentials():
         mock_critical.assert_called_once_with("No AWS credentials found")
         mock_exit.assert_called_once_with(1)
 
+
 def test_run_scanner_connection_error():
     mock_config = MagicMock()
     mock_boto3_wrapper = MagicMock()
@@ -114,6 +119,7 @@ def test_run_scanner_connection_error():
 
         mock_critical.assert_called_once()
         mock_exit.assert_called_once_with(1)
+
 
 def test_run_scanner_unexpected_error():
     mock_config = MagicMock()

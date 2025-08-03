@@ -1,7 +1,6 @@
 from unittest.mock import patch, MagicMock
 import pytest
 import botocore.exceptions
-import json
 
 def test_collect_s3_bucket_data_without_bucket_name():
     mock_s3 = MagicMock()
@@ -23,22 +22,24 @@ def test_collect_s3_bucket_data_without_bucket_name():
     mock_s3.get_bucket_cors.return_value = {'CORSRules': []}
     mock_s3.get_bucket_website.return_value = {'IndexDocument': {'Suffix': 'index.html'}}
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document={"Version": "2012-10-17"})
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document={"Version": "2012-10-17"})
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 2
-            assert results[0].name == "test-bucket-1"
-            assert results[1].name == "test-bucket-2"
-            assert results[0].pab_config == {'BlockPublicAcls': True}
-            assert results[0].acl_grants == [{'Grantee': {'Type': 'CanonicalUser'}}]
-            assert results[0].policy.document == {"Version": "2012-10-17"}
+        assert len(results) == 2
+        assert results[0].name == "test-bucket-1"
+        assert results[1].name == "test-bucket-2"
+        assert results[0].pab_config == {'BlockPublicAcls': True}
+        assert results[0].acl_grants == [{'Grantee': {'Type': 'CanonicalUser'}}]
+        assert results[0].policy.document == {"Version": "2012-10-17"}
 
-            mock_s3.list_buckets.assert_called_once()
+        mock_s3.list_buckets.assert_called_once()
 
 
 def test_collect_s3_bucket_data_with_bucket_name():
@@ -51,19 +52,21 @@ def test_collect_s3_bucket_data_with_bucket_name():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data(bucket_name="specific-bucket")
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector._collect_s3_bucket_data(bucket_name="specific-bucket")
 
-            assert len(results) == 1
-            assert results[0].name == "specific-bucket"
-            assert results[0].pab_config == {'BlockPublicAcls': False}
+        assert len(results) == 1
+        assert results[0].name == "specific-bucket"
+        assert results[0].pab_config == {'BlockPublicAcls': False}
 
-            mock_s3.list_buckets.assert_not_called()
+        mock_s3.list_buckets.assert_not_called()
 
 
 def test_collect_s3_bucket_data_list_buckets_error():
@@ -73,13 +76,14 @@ def test_collect_s3_bucket_data_list_buckets_error():
         operation_name='ListBuckets'
     )
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
 
-        from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-        results = collect_s3_bucket_data()
+    from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+    collector = AwsS3Collector(mock_boto3_wrapper)
+    results = collector.collect()
 
-        assert len(results) == 0
+    assert len(results) == 0
 
 
 def test_collect_s3_bucket_data_no_such_public_access_block():
@@ -94,16 +98,18 @@ def test_collect_s3_bucket_data_no_such_public_access_block():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            assert results[0].pab_config == {}
+        assert len(results) == 1
+        assert results[0].pab_config == {}
 
 
 def test_collect_s3_bucket_data_public_access_block_other_error():
@@ -114,13 +120,14 @@ def test_collect_s3_bucket_data_public_access_block_other_error():
         operation_name='GetPublicAccessBlock'
     )
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
 
-        from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-        results = collect_s3_bucket_data()
+    from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+    collector = AwsS3Collector(mock_boto3_wrapper)
+    results = collector.collect()
 
-        assert len(results) == 0  # Bucket skipped due to error
+    assert len(results) == 0
 
 
 def test_collect_s3_bucket_data_acl_error():
@@ -137,16 +144,18 @@ def test_collect_s3_bucket_data_acl_error():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            assert results[0].acl_grants == []
+        assert len(results) == 1
+        assert results[0].acl_grants == []
 
 
 def test_collect_s3_bucket_data_policy_error():
@@ -163,16 +172,18 @@ def test_collect_s3_bucket_data_policy_error():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            assert results[0].policy is None
+        assert len(results) == 1
+        assert results[0].policy is None
 
 
 def test_collect_s3_bucket_data_cors_error():
@@ -189,16 +200,18 @@ def test_collect_s3_bucket_data_cors_error():
     )
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            assert results[0].cors_config == {}
+        assert len(results) == 1
+        assert results[0].cors_config == {}
 
 
 def test_collect_s3_bucket_data_website_error():
@@ -215,16 +228,18 @@ def test_collect_s3_bucket_data_website_error():
         operation_name='GetBucketWebsite'
     )
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            assert results[0].website_config == {}
+        assert len(results) == 1
+        assert results[0].website_config == {}
 
 
 def test_collect_s3_bucket_data_empty_policy_string():
@@ -238,16 +253,18 @@ def test_collect_s3_bucket_data_empty_policy_string():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            assert results[0].policy is None
+        assert len(results) == 1
+        assert results[0].policy is None
 
 
 def test_collect_s3_bucket_data_invalid_json_policy():
@@ -261,36 +278,38 @@ def test_collect_s3_bucket_data_invalid_json_policy():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
 
-        from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-        results = collect_s3_bucket_data()
+    from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+    collector = AwsS3Collector(mock_boto3_wrapper)
+    results = collector.collect()
 
-        assert len(results) == 1
-        assert results[0].policy is None
+    assert len(results) == 1
+    assert results[0].policy is None
 
 def test_collect_s3_bucket_data_missing_buckets_key():
     mock_s3 = MagicMock()
-    mock_s3.list_buckets.return_value = {}  # Missing 'Buckets' key
+    mock_s3.list_buckets.return_value = {}
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
 
-        from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-        results = collect_s3_bucket_data()
+    from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+    collector = AwsS3Collector(mock_boto3_wrapper)
+    results = collector.collect()
 
-        assert len(results) == 0
+    assert len(results) == 0
 
 
 def test_collect_s3_bucket_data_boto3_wrapper_failure():
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.side_effect = Exception("AWS initialization failed")
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.side_effect = Exception("AWS initialization failed")
 
-        from aws_scanner.engines.s3.collector import collect_s3_bucket_data
+    from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
 
-        with pytest.raises(Exception, match="AWS initialization failed"):
-            collect_s3_bucket_data()
+    with pytest.raises(Exception, match="AWS initialization failed"):
+        AwsS3Collector(mock_boto3_wrapper)
 
 
 def test_collect_s3_bucket_data_all_operations_successful():
@@ -322,22 +341,24 @@ def test_collect_s3_bucket_data_all_operations_successful():
         'ErrorDocument': {'Key': 'error.html'}
     }
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document={"Version": "2012-10-17", "Statement": []})
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document={"Version": "2012-10-17", "Statement": []})
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            assert len(results) == 1
-            bucket = results[0]
-            assert bucket.name == "full-test-bucket"
-            assert bucket.pab_config['BlockPublicAcls'] is True
-            assert len(bucket.acl_grants) == 1
-            assert bucket.policy.document['Version'] == "2012-10-17"
-            assert len(bucket.cors_config['CORSRules']) == 1
-            assert bucket.website_config['IndexDocument']['Suffix'] == 'index.html'
+        assert len(results) == 1
+        bucket = results[0]
+        assert bucket.name == "full-test-bucket"
+        assert bucket.pab_config['BlockPublicAcls'] is True
+        assert len(bucket.acl_grants) == 1
+        assert bucket.policy.document['Version'] == "2012-10-17"
+        assert len(bucket.cors_config['CORSRules']) == 1
+        assert bucket.website_config['IndexDocument']['Suffix'] == 'index.html'
 
 
 def test_collect_s3_bucket_data_multiple_buckets_mixed_results():
@@ -350,7 +371,6 @@ def test_collect_s3_bucket_data_multiple_buckets_mixed_results():
         ]
     }
 
-    # Configure different responses for different buckets
     def get_pab_side_effect(Bucket):
         if Bucket == 'bucket-pab-error':
             raise botocore.exceptions.ClientError(
@@ -359,7 +379,7 @@ def test_collect_s3_bucket_data_multiple_buckets_mixed_results():
             )
         elif Bucket == 'bucket-success':
             return {'PublicAccessBlockConfiguration': {'BlockPublicAcls': True}}
-        else:  # bucket-partial
+        else:
             raise botocore.exceptions.ClientError(
                 error_response={'Error': {'Code': 'NoSuchPublicAccessBlock'}},
                 operation_name='GetPublicAccessBlock'
@@ -371,17 +391,18 @@ def test_collect_s3_bucket_data_multiple_buckets_mixed_results():
     mock_s3.get_bucket_cors.return_value = None
     mock_s3.get_bucket_website.return_value = None
 
-    with patch("aws_scanner.engines.s3.collector.Boto3Wrapper") as mock_wrapper:
-        mock_wrapper.return_value.get_s3.return_value = mock_s3
-        with patch("aws_scanner.engines.s3.collector.IamPolicyData") as mock_policy:
-            mock_policy.return_value = MagicMock(document=None)
+    mock_boto3_wrapper = MagicMock()
+    mock_boto3_wrapper.get_s3.return_value = mock_s3
+    
+    with patch("aws_scanner.engines.s3.aws_s3_collector.IamPolicyData") as mock_policy:
+        mock_policy.return_value = MagicMock(document=None)
 
-            from aws_scanner.engines.s3.collector import collect_s3_bucket_data
-            results = collect_s3_bucket_data()
+        from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+        collector = AwsS3Collector(mock_boto3_wrapper)
+        results = collector.collect()
 
-            # Only successful and partial buckets should be returned
-            assert len(results) == 2
-            bucket_names = [b.name for b in results]
-            assert 'bucket-success' in bucket_names
-            assert 'bucket-partial' in bucket_names
-            assert 'bucket-pab-error' not in bucket_names
+        assert len(results) == 2
+        bucket_names = [b.name for b in results]
+        assert 'bucket-success' in bucket_names
+        assert 'bucket-partial' in bucket_names
+        assert 'bucket-pab-error' not in bucket_names

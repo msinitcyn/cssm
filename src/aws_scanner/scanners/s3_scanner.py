@@ -3,12 +3,19 @@ import logging
 import botocore.exceptions
 
 from aws_scanner.core.configs import S3Config
-from aws_scanner.engines.s3.collector import collect_s3_bucket_data
+from aws_scanner.engines.s3.aws_s3_collector import AwsS3Collector
+from aws_scanner.engines.s3.file_s3_collector import FileS3Collector
 from aws_scanner.engines.s3.analyzer import analyze_s3_bucket
 
-def find_issues(s3_config: S3Config):
+from aws_scanner.core.boto3_wrapper import Boto3Wrapper
+
+def get_collector(config: S3Config, boto3_wrapper: Boto3Wrapper):
+    if config.file:
+        return FileS3Collector(config.file)
+    return AwsS3Collector(boto3_wrapper)
+
+def analyze_s3_buckets(items):
     results = []
-    items = collect_s3_bucket_data()
     for item in items:
         try:
             findings = analyze_s3_bucket(item)
@@ -23,10 +30,12 @@ def find_issues(s3_config: S3Config):
             })
     return results
 
-def run_scanner(s3_config: S3Config):
+def run_scanner(s3_config: S3Config, boto3_wrapper: Boto3Wrapper):
     logging.info("Starting S3 scanner")
     try:
-        results = find_issues(s3_config)
+        collector = get_collector(s3_config, boto3_wrapper)
+        items = collector.collect()
+        results = analyze_s3_buckets(items)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found")
         sys.exit(1)
