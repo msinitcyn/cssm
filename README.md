@@ -39,7 +39,7 @@ The goal is to quickly detect high-risk settings that frequently lead to data le
 Run the scanner from the project root using Python:
 
 ```bash
-python -m aws_scanner.main [COMMAND] [OPTIONS]
+python -m aws_scanner.cli.main [COMMAND] [OPTIONS]
 ```
 
 ### Commands
@@ -63,32 +63,32 @@ python -m aws_scanner.main [COMMAND] [OPTIONS]
 Run all scanners (default behavior):
 
 ```bash
-python -m aws_scanner.main
+python -m aws_scanner.cli.main
 ```
 
 Run only the S3 scanner:
 ```bash
-python -m aws_scanner.main s3
+python -m aws_scanner.cli.main s3
 ```
 
 Scan IAM roles and write results to a custom file:
 ```bash
-python -m aws_scanner.main --output results/iam_report.json iam
+python -m aws_scanner.cli.main --output results/iam_report.json iam
 ```
 
 Scan security groups in specific regions:
 ```bash
-python -m aws_scanner.main sg --regions us-east-1,eu-west-1
+python -m aws_scanner.cli.main sg --regions us-east-1,eu-west-1
 ```
 
 Generate HTML report along with JSON:
 ```bash
-python -m aws_scanner.main --html
+python -m aws_scanner.cli.main --html
 ```
 
 Scan security groups and generate HTML report:
 ```bash
-python -m aws_scanner.main --html sg
+python -m aws_scanner.cli.main --html sg
 ```
 
 ## Output
