@@ -78,8 +78,7 @@ def test_run_scanner_success():
              "bucket_name": "test-bucket",
              "vulnerabilities": mock_findings
          }]), \
-         patch("logging.info") as mock_info, \
-         patch("logging.warning") as mock_warning:
+         patch("logging.info") as mock_info:
 
         mock_collector = MagicMock()
         mock_collector.collect.return_value = [mock_bucket]
@@ -91,7 +90,6 @@ def test_run_scanner_success():
         assert len(results) == 1
         assert results[0]["bucket_name"] == "test-bucket"
         mock_info.assert_called_once_with("Starting S3 scanner")
-        mock_warning.assert_called_once_with("Bucket test-bucket: Test finding")
 
 
 def test_run_scanner_no_credentials():
@@ -172,9 +170,7 @@ def test_run_scanner_with_errors():
     ]
 
     with patch("aws_scanner.scanners.s3_scanner.get_collector") as mock_get_collector, \
-         patch("aws_scanner.scanners.s3_scanner.analyze_s3_buckets", return_value=mock_results), \
-         patch("logging.error") as mock_error, \
-         patch("logging.warning") as mock_warning:
+         patch("aws_scanner.scanners.s3_scanner.analyze_s3_buckets", return_value=mock_results):
 
         mock_collector = MagicMock()
         mock_collector.collect.return_value = [MagicMock(), MagicMock()]
@@ -184,8 +180,6 @@ def test_run_scanner_with_errors():
         results = run_scanner(mock_config, mock_boto3_wrapper)
 
         assert results == mock_results
-        mock_error.assert_called_once_with("Error scanning error-bucket: Scan error")
-        mock_warning.assert_called_once_with("Bucket good-bucket: Some vulnerability")
 
 
 def test_integration_with_mocks():

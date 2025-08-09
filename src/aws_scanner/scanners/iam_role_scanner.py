@@ -37,7 +37,7 @@ def run_scanner(iam_role_config: IamRoleConfig, boto3_wrapper: Boto3Wrapper):
     try:
         collector = get_collector(iam_role_config, boto3_wrapper)
         items = collector.collect()
-        results = analyze_policies(items)
+        return analyze_policies(items)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found")
         sys.exit(1)
@@ -47,13 +47,3 @@ def run_scanner(iam_role_config: IamRoleConfig, boto3_wrapper: Boto3Wrapper):
     except Exception as e:
         logging.critical(f"Unexpected error: {e}")
         sys.exit(1)
-
-    for result in results:
-        if "error" in result:
-            logging.error(f"Error scanning {result.get('role_name')}: {result['error']}")
-            continue
-
-        for vuln in result.get("vulnerabilities", []):
-            logging.warning(f"Role {result['role_name']}: {vuln.get('description', 'Unknown vulnerability')}")
-
-    return results

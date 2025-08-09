@@ -84,8 +84,7 @@ def test_run_scanner_success():
     with patch("aws_scanner.scanners.iam_policy_scanner.get_collector") as mock_get_collector, \
          patch("aws_scanner.scanners.iam_policy_scanner.analyze_policies", 
               return_value=mock_results), \
-         patch("logging.info") as mock_info, \
-         patch("logging.warning") as mock_warning:
+         patch("logging.info") as mock_info:
 
         mock_collector = MagicMock()
         mock_collector.collect.return_value = []
@@ -96,9 +95,6 @@ def test_run_scanner_success():
 
         assert results == mock_results
         mock_info.assert_called_once_with("Starting IAM policy scanner")
-        mock_warning.assert_called_once_with(
-            "Policy test-policy (arn:aws:iam::123456789012:policy/test-policy): Policy uses wildcard actions"
-        )
 
 def test_run_scanner_no_credentials():
     mock_config = MagicMock()
@@ -149,8 +145,7 @@ def test_run_scanner_with_errors():
 
     with patch("aws_scanner.scanners.iam_policy_scanner.get_collector") as mock_get_collector, \
          patch("aws_scanner.scanners.iam_policy_scanner.analyze_policies", 
-              return_value=mock_results), \
-         patch("logging.warning") as mock_warning:
+              return_value=mock_results):
 
         mock_collector = MagicMock()
         mock_collector.collect.return_value = []
@@ -160,6 +155,3 @@ def test_run_scanner_with_errors():
         results = run_scanner(mock_config, mock_boto3)
 
         assert results == mock_results
-        mock_warning.assert_called_once_with(
-            "Policy policy2 (arn:aws:iam::123456789012:policy/policy2): Some vulnerability"
-        )

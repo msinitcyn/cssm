@@ -1,90 +1,108 @@
 from unittest.mock import patch, MagicMock
 import botocore.exceptions
 
-def test_find_issues_success():
-    mock_sg_config = MagicMock()
-    mock_sg_config.regions = ["us-east-1"]
+from aws_scanner.engines.sg.sg_data import SgData
+from aws_scanner.core.configs import SgConfig
+from aws_scanner.core.boto3_wrapper import Boto3Wrapper
 
-    mock_groups = [
-        MagicMock(group_id="sg-1", group_name="test-sg-1"),
-        MagicMock(group_id="sg-2", group_name="test-sg-2")
-    ]
 
-    mock_findings_1 = [{"type": "open_port", "description": "Port 22 open to 0.0.0.0/0"}]
-    mock_findings_2 = [{"type": "cross_account", "description": "Cross account access detected"}]
+def test_get_collector_aws():
+    mock_config = MagicMock()
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock()
 
-    with patch("aws_scanner.scanners.sg_scanner.collect_security_groups", return_value=mock_groups) as mock_collect, \
-         patch("aws_scanner.scanners.sg_scanner.analyze_sg", side_effect=[mock_findings_1, mock_findings_2]) as mock_analyze:
+    with patch("aws_scanner.scanners.sg_scanner.AwsSgCollector") as mock_aws_collector:
+        from aws_scanner.scanners.sg_scanner import get_collector
+        get_collector(mock_config, mock_boto3_wrapper)
 
-        from aws_scanner.scanners.sg_scanner import find_issues
-        results = find_issues(mock_sg_config)
+        mock_aws_collector.assert_called_once_with(mock_boto3_wrapper, ["us-east-1"])
+
+
+def test_analyze_security_groups_success():
+    mock_sg1 = MagicMock(spec=SgData)
+    mock_sg1.group_id = "sg-123"
+    mock_sg1.group_name = "group1"
+    mock_sg2 = MagicMock(spec=SgData)
+    mock_sg2.group_id = "sg-456"
+    mock_sg2.group_name = "group2"
+
+    mock_findings1 = [{"type": "open_port", "description": "Open port 22"}]
+    mock_findings2 = [{"type": "wide_open", "description": "0.0.0.0/0 access"}]
+
+    with patch("aws_scanner.scanners.sg_scanner.analyze_sg",
+              side_effect=[mock_findings1, mock_findings2]):
+        from aws_scanner.scanners.sg_scanner import analyze_security_groups
+        results = analyze_security_groups([mock_sg1, mock_sg2])
 
         assert len(results) == 2
-        assert results[0]["group_id"] == "sg-1"
-        assert results[0]["group_name"] == "test-sg-1"
-        assert results[0]["vulnerabilities"] == mock_findings_1
-        assert results[1]["group_id"] == "sg-2"
-        assert results[1]["group_name"] == "test-sg-2"
-        assert results[1]["vulnerabilities"] == mock_findings_2
-
-        mock_collect.assert_called_once_with(regions=["us-east-1"])
-        assert mock_analyze.call_count == 2
+        assert results[0]["group_id"] == "sg-123"
+        assert results[0]["group_name"] == "group1"
+        assert results[0]["vulnerabilities"] == mock_findings1
+        assert results[1]["group_id"] == "sg-456"
+        assert results[1]["group_name"] == "group2"
+        assert results[1]["vulnerabilities"] == mock_findings2
 
 
-def test_find_issues_analyzer_error():
-    mock_sg_config = MagicMock()
-    mock_sg_config.regions = ["us-east-1"]
+def test_analyze_security_groups_with_error():
+    mock_sg = MagicMock(spec=SgData)
+    mock_sg.group_id = "sg-err"
+    mock_sg.group_name = "error-group"
 
-    mock_groups = [MagicMock(group_id="sg-1", group_name="test-sg-1")]
-
-    with patch("aws_scanner.scanners.sg_scanner.collect_security_groups", return_value=mock_groups) as mock_collect, \
-         patch("aws_scanner.scanners.sg_scanner.analyze_sg", side_effect=Exception("Analysis failed")) as mock_analyze:
-
-        from aws_scanner.scanners.sg_scanner import find_issues
-        results = find_issues(mock_sg_config)
+    with patch("aws_scanner.scanners.sg_scanner.analyze_sg",
+              side_effect=Exception("Test error")):
+        from aws_scanner.scanners.sg_scanner import analyze_security_groups
+        results = analyze_security_groups([mock_sg])
 
         assert len(results) == 1
-        assert results[0]["group_id"] == "sg-1"
-        assert results[0]["group_name"] == "test-sg-1"
-        assert results[0]["error"] == "Analysis failed"
-
-        mock_collect.assert_called_once_with(regions=["us-east-1"])
-        mock_analyze.assert_called_once()
+        assert results[0]["group_id"] == "sg-err"
+        assert results[0]["group_name"] == "error-group"
+        assert results[0]["error"] == "Test error"
 
 
 def test_run_scanner_success():
-    mock_sg_config = MagicMock()
-    mock_results = [
-        {
-            "group_id": "sg-1",
-            "group_name": "test-sg-1",
-            "vulnerabilities": [{"description": "Port 22 open to 0.0.0.0/0"}]
-        }
-    ]
+    mock_config = MagicMock(spec=SgConfig)
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock(spec=Boto3Wrapper)
 
-    with patch("aws_scanner.scanners.sg_scanner.find_issues", return_value=mock_results) as mock_find_issues, \
-         patch("logging.info") as mock_info, \
-         patch("logging.warning") as mock_warning:
+    mock_sg = MagicMock(spec=SgData)
+    mock_sg.group_id = "sg-123"
+    mock_sg.group_name = "test-group"
+    mock_findings = [{"description": "Test finding"}]
+
+    with patch("aws_scanner.scanners.sg_scanner.get_collector") as mock_get_collector, \
+         patch("aws_scanner.scanners.sg_scanner.analyze_security_groups", return_value=[{
+             "group_id": "sg-123",
+             "group_name": "test-group",
+             "vulnerabilities": mock_findings
+         }]), \
+         patch("logging.info") as mock_info:
+
+        mock_collector = MagicMock()
+        mock_collector.collect.return_value = [mock_sg]
+        mock_get_collector.return_value = mock_collector
 
         from aws_scanner.scanners.sg_scanner import run_scanner
-        results = run_scanner(mock_sg_config)
+        results = run_scanner(mock_config, mock_boto3_wrapper)
 
-        assert results == mock_results
-        mock_find_issues.assert_called_once_with(mock_sg_config)
+        assert len(results) == 1
+        assert results[0]["group_id"] == "sg-123"
         mock_info.assert_called_once_with("Starting Security Group scanner")
-        mock_warning.assert_called_once_with("SG sg-1 (test-sg-1): Port 22 open to 0.0.0.0/0")
 
 
 def test_run_scanner_no_credentials():
-    mock_sg_config = MagicMock()
+    mock_config = MagicMock(spec=SgConfig)
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock(spec=Boto3Wrapper)
+    mock_collector = MagicMock()
+    mock_collector.collect.side_effect = botocore.exceptions.NoCredentialsError()
 
-    with patch("aws_scanner.scanners.sg_scanner.find_issues", side_effect=botocore.exceptions.NoCredentialsError()), \
+    with patch("aws_scanner.scanners.sg_scanner.get_collector", return_value=mock_collector), \
          patch("logging.critical") as mock_critical, \
          patch("sys.exit", side_effect=SystemExit(1)) as mock_exit:
-
+        
         from aws_scanner.scanners.sg_scanner import run_scanner
         try:
-            run_scanner(mock_sg_config)
+            run_scanner(mock_config, mock_boto3_wrapper)
         except SystemExit:
             pass
 
@@ -93,15 +111,23 @@ def test_run_scanner_no_credentials():
 
 
 def test_run_scanner_connection_error():
-    mock_sg_config = MagicMock()
+    mock_config = MagicMock(spec=SgConfig)
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock(spec=Boto3Wrapper)
 
-    with patch("aws_scanner.scanners.sg_scanner.find_issues", side_effect=botocore.exceptions.EndpointConnectionError(endpoint_url="https://ec2.us-east-1.amazonaws.com", error="Connection error")), \
+    mock_collector = MagicMock()
+    mock_collector.collect.side_effect = botocore.exceptions.EndpointConnectionError(
+        endpoint_url="test",
+        error="Connection error"
+    )
+
+    with patch("aws_scanner.scanners.sg_scanner.get_collector", return_value=mock_collector), \
          patch("logging.critical") as mock_critical, \
          patch("sys.exit", side_effect=SystemExit(1)) as mock_exit:
 
         from aws_scanner.scanners.sg_scanner import run_scanner
         try:
-            run_scanner(mock_sg_config)
+            run_scanner(mock_config, mock_boto3_wrapper)
         except SystemExit:
             pass
 
@@ -109,53 +135,75 @@ def test_run_scanner_connection_error():
         mock_exit.assert_called_once_with(1)
 
 
+def test_run_scanner_unexpected_error():
+    mock_config = MagicMock(spec=SgConfig)
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock(spec=Boto3Wrapper)
+
+    mock_collector = MagicMock()
+    mock_collector.collect.side_effect = Exception("Unexpected error")
+
+    with patch("aws_scanner.scanners.sg_scanner.get_collector", return_value=mock_collector), \
+         patch("logging.critical") as mock_critical, \
+         patch("sys.exit", side_effect=SystemExit(1)) as mock_exit:
+
+        from aws_scanner.scanners.sg_scanner import run_scanner
+        try:
+            run_scanner(mock_config, mock_boto3_wrapper)
+        except SystemExit:
+            pass
+
+        mock_critical.assert_called_once_with("Unexpected error: Unexpected error")
+        mock_exit.assert_called_once_with(1)
+
+
 def test_run_scanner_with_errors():
-    mock_sg_config = MagicMock()
+    mock_config = MagicMock(spec=SgConfig)
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock(spec=Boto3Wrapper)
+
     mock_results = [
-        {"group_id": "sg-1", "error": "Failed to analyze"},
+        {"group_id": "sg-err", "group_name": "error-group", "error": "Scan error"},
         {
-            "group_id": "sg-2",
-            "group_name": "test-sg-2",
+            "group_id": "sg-ok",
+            "group_name": "good-group",
             "vulnerabilities": [{"description": "Some vulnerability"}]
         }
     ]
 
-    with patch("aws_scanner.scanners.sg_scanner.find_issues", return_value=mock_results), \
-         patch("logging.error") as mock_error, \
-         patch("logging.warning") as mock_warning:
+    with patch("aws_scanner.scanners.sg_scanner.get_collector") as mock_get_collector, \
+         patch("aws_scanner.scanners.sg_scanner.analyze_security_groups", return_value=mock_results):
+
+        mock_collector = MagicMock()
+        mock_collector.collect.return_value = [MagicMock(), MagicMock()]
+        mock_get_collector.return_value = mock_collector
 
         from aws_scanner.scanners.sg_scanner import run_scanner
-        results = run_scanner(mock_sg_config)
+        results = run_scanner(mock_config, mock_boto3_wrapper)
 
         assert results == mock_results
-        mock_error.assert_called_once_with("Error scanning sg-1: Failed to analyze")
-        mock_warning.assert_called_once_with("SG sg-2 (test-sg-2): Some vulnerability")
 
 
 def test_integration_with_mocks():
-    mock_sg_config = MagicMock()
-    mock_sg_config.regions = ["us-east-1"]
+    mock_sg1 = MagicMock(spec=SgData)
+    mock_sg1.group_id = "sg-123"
+    mock_sg1.group_name = "group1"
+    mock_sg2 = MagicMock(spec=SgData)
+    mock_sg2.group_id = "sg-456"
+    mock_sg2.group_name = "group2"
 
-    mock_groups = [
-        MagicMock(group_id="sg-1", group_name="test-sg-1"),
-        MagicMock(group_id="sg-2", group_name="test-sg-2")
-    ]
+    mock_findings1 = [{"type": "open_port", "raw_data": {"port": 22}}]
+    mock_findings2 = [{"type": "wide_open", "raw_data": {"cidr": "0.0.0.0/0"}}]
 
-    mock_findings_1 = [{"type": "open_port", "raw_data": {"cidr": "0.0.0.0/0"}}]
-    mock_findings_2 = [{"type": "cross_account", "raw_data": {"user_id": "2222"}}]
-
-    with patch("aws_scanner.scanners.sg_scanner.collect_security_groups", return_value=mock_groups) as mock_collect, \
-         patch("aws_scanner.scanners.sg_scanner.analyze_sg", side_effect=[mock_findings_1, mock_findings_2]) as mock_analyze:
-
-        from aws_scanner.scanners.sg_scanner import find_issues
-        results = find_issues(mock_sg_config)
+    with patch("aws_scanner.scanners.sg_scanner.analyze_sg",
+              side_effect=[mock_findings1, mock_findings2]):
+        from aws_scanner.scanners.sg_scanner import analyze_security_groups
+        results = analyze_security_groups([mock_sg1, mock_sg2])
 
         all_findings = []
         for result in results:
             if "vulnerabilities" in result:
                 all_findings.extend(result["vulnerabilities"])
 
-        assert any(f.get("type") == "open_port" and f.get("raw_data", {}).get("cidr") == "0.0.0.0/0" for f in all_findings)
-        assert any(f.get("type") == "cross_account" and f.get("raw_data", {}).get("user_id") == "2222" for f in all_findings)
-        assert mock_collect.called
-        assert mock_analyze.call_count == len(mock_groups)
+        assert any(f.get("type") == "open_port" for f in all_findings)
+        assert any(f.get("type") == "wide_open" for f in all_findings)

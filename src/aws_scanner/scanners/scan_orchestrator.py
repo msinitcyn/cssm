@@ -13,7 +13,7 @@ def run_scan(run_config: RunConfig):
     results = {}
 
     if run_config.s3:
-        results["s3_buckets"] = run_s3_scanner(run_config.s3)
+        results["s3_buckets"] = run_s3_scanner(run_config.s3, boto3Wrapper)
 
     if run_config.iam_role:
         results["iam_roles"] = run_iam_role_scanner(run_config.iam_role, boto3Wrapper)
@@ -22,6 +22,6 @@ def run_scan(run_config: RunConfig):
         results["iam_policies"] = run_iam_policy_scanner(run_config.iam_policy, boto3Wrapper)
 
     if run_config.sg:
-        results["security_groups"] = run_sg_scanner(run_config.sg)
+        results["security_groups"] = run_sg_scanner(run_config.sg, boto3Wrapper)
 
     generate_report(run_config.report, results)

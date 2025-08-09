@@ -10,7 +10,7 @@ from .s3_bucket_data import S3BucketData
 class AwsS3Collector(S3Collector):
     
     def __init__(self, boto3_wrapper: Boto3Wrapper):
-        self.s3 = boto3_wrapper.get_s3()
+        self._s3 = boto3_wrapper.get_s3()
     
     def collect(self) -> List[S3BucketData]:
         return self._collect_s3_bucket_data()
@@ -22,7 +22,7 @@ class AwsS3Collector(S3Collector):
             buckets = [{'Name': bucket_name}]
         else:
             try:
-                buckets = self.s3.list_buckets().get('Buckets', [])
+                buckets = self._s3.list_buckets().get('Buckets', [])
             except botocore.exceptions.ClientError:
                 return []
         
@@ -38,18 +38,18 @@ class AwsS3Collector(S3Collector):
         pab = acl = policy = cors = website = None
         
         try:
-            pab = self.s3.get_public_access_block(Bucket=bucket_name).get("PublicAccessBlockConfiguration", {})
+            pab = self._s3.get_public_access_block(Bucket=bucket_name).get("PublicAccessBlockConfiguration", {})
         except botocore.exceptions.ClientError as e:
             if e.response.get("Error", {}).get("Code") != "NoSuchPublicAccessBlock":
                 return None
         
         try:
-            acl = self.s3.get_bucket_acl(Bucket=bucket_name).get("Grants", [])
+            acl = self._s3.get_bucket_acl(Bucket=bucket_name).get("Grants", [])
         except botocore.exceptions.ClientError:
             pass
         
         try:
-            policy_str = self.s3.get_bucket_policy(Bucket=bucket_name).get("Policy")
+            policy_str = self._s3.get_bucket_policy(Bucket=bucket_name).get("Policy")
             if policy_str:
                 try:
                     policy = IamPolicyData(
@@ -65,12 +65,12 @@ class AwsS3Collector(S3Collector):
             pass
         
         try:
-            cors = self.s3.get_bucket_cors(Bucket=bucket_name)
+            cors = self._s3.get_bucket_cors(Bucket=bucket_name)
         except botocore.exceptions.ClientError:
             pass
         
         try:
-            website = self.s3.get_bucket_website(Bucket=bucket_name)
+            website = self._s3.get_bucket_website(Bucket=bucket_name)
         except botocore.exceptions.ClientError:
             pass
         

@@ -35,7 +35,7 @@ def run_scanner(s3_config: S3Config, boto3_wrapper: Boto3Wrapper):
     try:
         collector = get_collector(s3_config, boto3_wrapper)
         items = collector.collect()
-        results = analyze_s3_buckets(items)
+        return analyze_s3_buckets(items)
     except botocore.exceptions.NoCredentialsError:
         logging.critical("No AWS credentials found")
         sys.exit(1)
@@ -45,13 +45,3 @@ def run_scanner(s3_config: S3Config, boto3_wrapper: Boto3Wrapper):
     except Exception as e:
         logging.critical(f"Unexpected error: {e}")
         sys.exit(1)
-
-    for result in results:
-        if "error" in result:
-            logging.error(f"Error scanning {result.get('bucket_name')}: {result['error']}")
-            continue
-
-        for vuln in result.get("vulnerabilities", []):
-            logging.warning(f"Bucket {result['bucket_name']}: {vuln.get('description', 'Unknown vulnerability')}")
-
-    return results
