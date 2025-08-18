@@ -155,7 +155,7 @@ aws-scanner [COMMAND] [OPTIONS]
 ```
 Or via module:
 ```bash
-python -m aws_scanner.main [COMMAND] [OPTIONS]
+python -m aws_scanner.cli.main [COMMAND] [OPTIONS]
 ```
 
 ### Testing

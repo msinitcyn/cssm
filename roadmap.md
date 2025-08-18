@@ -41,6 +41,7 @@
 [ ] False positive detection - verify good configs are NOT flagged<br>
 [ ] Document test results and detection accuracy metrics<br>
 [ ] Create test runner with pass/fail reporting<br>
+[ ] Generate HTML reports for each example in CI build for demo purposes<br>
 
 ## Milestone 8: IDE and GitHub integration
 [ ] VSCode extension with inline highlights for risky configurations<br>

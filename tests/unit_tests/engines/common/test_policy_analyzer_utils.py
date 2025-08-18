@@ -97,7 +97,8 @@ def test_analyze_statement_wildcard_all():
 
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ALL")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
-        assert mock_vuln.instantiate.call_count == 2
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
+        assert mock_vuln.instantiate.call_count == 3
 
 
 def test_analyze_statement_notaction_wildcard_resource():
@@ -251,7 +252,8 @@ def test_analyze_statement_with_action_list():
 
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ALL")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
-        assert mock_vuln.instantiate.call_count == 2
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
+        assert mock_vuln.instantiate.call_count == 3
 
 
 def test_analyze_statement_with_resource_list():
@@ -271,7 +273,8 @@ def test_analyze_statement_with_resource_list():
 
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ALL")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
-        assert mock_vuln.instantiate.call_count == 2
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
+        assert mock_vuln.instantiate.call_count == 3
 
 
 def test_analyze_statement_empty_action_resource():

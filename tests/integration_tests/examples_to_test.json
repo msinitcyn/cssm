@@ -1,0 +1,11 @@
+[
+  {
+    "type": "iam",
+    "name": "wildcard_admin",
+    "vulnerabilities": [
+      "IAM_POLICY_WILDCARD_ALL",
+      "IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION",
+      "IAM_POLICY_PRIVILEGE_ESCALATION"
+    ]
+  }
+]

@@ -21,6 +21,34 @@ def is_restrictive(condition: Any) -> bool:
                 return True
     return False
 
+PRIVILEGE_ESCALATION_PATTERNS = [
+    ["iam:CreateRole", "iam:AttachRolePolicy"],
+    ["iam:CreateRole", "iam:PutRolePolicy"], 
+    ["iam:CreateUser", "iam:AttachUserPolicy"],
+    ["iam:CreateUser", "iam:PutUserPolicy"],
+    ["lambda:CreateFunction", "iam:PassRole"],
+]
+
+def has_privilege_escalation(actions, resources):
+    has_wildcard_resource = any(r == "*" for r in resources)
+    if not has_wildcard_resource:
+        return False
+        
+    set(actions)
+    
+    for pattern in PRIVILEGE_ESCALATION_PATTERNS:
+        if all(
+            any(
+                pattern_action in action or 
+                action == "*" or
+                pattern_action == action
+                for action in actions
+            )
+            for pattern_action in pattern
+        ):
+            return True
+    return False
+
 def analyze_statement(stmt: Dict[str, Any]) -> List[Dict[str, Any]]:
     findings = []
     
@@ -57,6 +85,9 @@ def analyze_statement(stmt: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     if has_wildcard_action and not is_restrictive(condition):
         findings.append(VULNERABILITIES["IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION"].instantiate("policy", raw_data=stmt))
+
+    if has_privilege_escalation(action, resource):
+        findings.append(VULNERABILITIES["IAM_POLICY_PRIVILEGE_ESCALATION"].instantiate("policy", raw_data=stmt))
 
     return findings
 

@@ -62,6 +62,13 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="iam_policy",
         remediation="Add restrictive Condition such as SourceIp or avoid wildcards."
     ),
+    "IAM_POLICY_PRIVILEGE_ESCALATION": VulnerabilityTemplate(
+        id="IAM_POLICY_PRIVILEGE_ESCALATION",
+        description="Policy contains privilege escalation permissions",
+        severity="critical",
+        entity_type="iam_policy",
+        remediation="Restrict IAM permissions or add conditions to prevent privilege escalation."
+    ),
     "IAM_ROLE_BROAD_ASSUME_ROLE": VulnerabilityTemplate(
         id="IAM_ROLE_BROAD_ASSUME_ROLE",
         description="IAM Role trust policy allows sts:AssumeRole to Principal='*' or without restrictive conditions — critical lateral movement risk",
