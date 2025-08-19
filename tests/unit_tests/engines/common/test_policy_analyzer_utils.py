@@ -412,3 +412,23 @@ def test_analyze_policy_empty_statements():
     findings = analyze_policy(policy)
 
     assert len(findings) == 0
+
+def test_privilege_escalation_specific():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+    from unittest.mock import patch, MagicMock
+
+    test_stmt = {
+        "Effect": "Allow",
+        "Action": ["iam:CreateRole", "iam:AttachRolePolicy"],
+        "Resource": "*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln_class = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln_class
+
+        findings = analyze_statement(test_stmt)
+
+        mock_vulns.__getitem__.assert_called_once_with("IAM_POLICY_PRIVILEGE_ESCALATION")
+        mock_vuln_class.instantiate.assert_called_once_with("policy", raw_data=test_stmt)
+        assert len(findings) == 1
