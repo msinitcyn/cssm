@@ -7,5 +7,12 @@
       "IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION",
       "IAM_POLICY_PRIVILEGE_ESCALATION"
     ]
+  },
+  {
+    "type": "iam",
+    "name": "privilege_escalation",
+    "vulnerabilities": [
+      "IAM_POLICY_PRIVILEGE_ESCALATION"
+    ]
   }
 ]
