@@ -1,0 +1,52 @@
+{
+    "name": "CapitalOneBreachScenario",
+    "description": "Simulates the misconfiguration that led to the Capital One breach",
+    "resource_type": "iam_role",
+    "role_name": "WAF-Role",
+    "assume_role_policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Principal": {
+                    "Service": "ec2.amazonaws.com"
+                },
+                "Action": "sts:AssumeRole"
+            }
+        ]
+    },
+    "attached_policies": [
+        {
+            "name": "OverlyPermissiveS3Policy",
+            "document": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "s3:GetObject",
+                            "s3:ListBucket"
+                        ],
+                        "Resource": [
+                            "arn:aws:s3:::*",
+                            "arn:aws:s3:::*/*"
+                        ]
+                    },
+                    {
+                        "Effect": "Allow",
+                        "Action": [
+                            "iam:ListAttachedRolePolicies",
+                            "iam:GetRolePolicy"
+                        ],
+                        "Resource": "*"
+                    }
+                ]
+            }
+        }
+    ],
+    "ec2_metadata_service": {
+        "version": "v1",
+        "http_tokens": "optional",
+        "hop_limit": 2
+    }
+}

@@ -1,0 +1,21 @@
+{
+    "name": "UnconditionalS3Access",
+    "resource_type": "iam_policy",
+    "policy_type": "attached",
+    "arn": "arn:aws:iam::123456789012:policy/UnconditionalS3Access",
+    "is_inline": false,
+    "document": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "s3:GetObject",
+                    "s3:PutObject",
+                    "s3:DeleteObject"
+                ],
+                "Resource": "arn:aws:s3:::sensitive-bucket/*"
+            }
+        ]
+    }
+}

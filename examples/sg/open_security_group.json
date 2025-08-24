@@ -1,0 +1,26 @@
+{
+    "name": "OpenSSHSecurityGroup",
+    "resource_type": "ec2_security_group",
+    "group_id": "sg-12345678",
+    "group_name": "web-servers-sg",
+    "ingress_rules": [
+        {
+            "protocol": "tcp",
+            "from_port": 22,
+            "to_port": 22,
+            "cidr_blocks": [
+                "0.0.0.0/0"
+            ],
+            "description": "SSH access from anywhere"
+        },
+        {
+            "protocol": "tcp",
+            "from_port": 3389,
+            "to_port": 3389,
+            "cidr_blocks": [
+                "0.0.0.0/0"
+            ],
+            "description": "RDP access from anywhere"
+        }
+    ]
+}

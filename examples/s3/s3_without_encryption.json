@@ -1,0 +1,15 @@
+{
+    "name": "UnloggedS3Bucket",
+    "resource_type": "s3_bucket",
+    "bucket_name": "sensitive-data-bucket",
+    "server_access_logging": {
+        "enabled": false
+    },
+    "versioning": {
+        "status": "Suspended"
+    },
+    "encryption": {
+        "server_side_encryption": "none"
+    },
+    "mfa_delete": false
+}

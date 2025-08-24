@@ -1,0 +1,24 @@
+{
+    "name": "RestrictiveSecurityGroup",
+    "resource_type": "ec2_security_group",
+    "group_id": "sg-87654321",
+    "group_name": "restricted-access-sg",
+    "ingress_rules": [
+        {
+            "protocol": "tcp",
+            "from_port": 443,
+            "to_port": 443,
+            "source_security_group_id": "sg-12345678",
+            "description": "HTTPS from load balancer SG"
+        },
+        {
+            "protocol": "tcp",
+            "from_port": 22,
+            "to_port": 22,
+            "cidr_blocks": [
+                "10.0.0.0/16"
+            ],
+            "description": "SSH from VPC only"
+        }
+    ]
+}

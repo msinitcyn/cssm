@@ -1,18 +1,18 @@
 {
-  "BadPolicy": {
-    "name": "BadPolicy",
-    "policy_type": "attached",
-    "arn": "arn:aws:iam::123456789012:policy/BadPolicy",
-    "is_inline": false,
-    "document": {
-      "Version": "2012-10-17",
-      "Statement": [
-        {
-          "Effect": "Allow",
-          "Action": "*",
-          "Resource": "*"
+    "BadPolicy": {
+        "name": "BadPolicy",
+        "policy_type": "attached",
+        "arn": "arn:aws:iam::123456789012:policy/BadPolicy",
+        "is_inline": false,
+        "document": {
+            "Version": "2012-10-17",
+            "Statement": [
+                {
+                    "Effect": "Allow",
+                    "Action": "*",
+                    "Resource": "*"
+                }
+            ]
         }
-      ]
     }
-  }
 }

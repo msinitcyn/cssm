@@ -1,0 +1,17 @@
+{
+    "name": "AssumeAnyRolePolicy",
+    "resource_type": "iam_policy",
+    "policy_type": "attached",
+    "arn": "arn:aws:iam::123456789012:policy/AssumeAnyRolePolicy",
+    "is_inline": false,
+    "document": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": "sts:AssumeRole",
+                "Resource": "*"
+            }
+        ]
+    }
+}

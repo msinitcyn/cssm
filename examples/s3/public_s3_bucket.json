@@ -1,0 +1,24 @@
+{
+    "name": "PublicS3Bucket",
+    "resource_type": "s3_bucket",
+    "bucket_name": "my-public-bucket",
+    "policy": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Sid": "PublicReadGetObject",
+                "Effect": "Allow",
+                "Principal": "*",
+                "Action": "s3:GetObject",
+                "Resource": "arn:aws:s3:::my-public-bucket/*"
+            }
+        ]
+    },
+    "acl": "public-read",
+    "block_public_access": {
+        "BlockPublicAcls": false,
+        "IgnorePublicAcls": false,
+        "BlockPublicPolicy": false,
+        "RestrictPublicBuckets": false
+    }
+}
