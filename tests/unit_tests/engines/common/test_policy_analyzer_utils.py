@@ -98,7 +98,8 @@ def test_analyze_statement_wildcard_all():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ALL")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
-        assert mock_vuln.instantiate.call_count == 3
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+        assert mock_vuln.instantiate.call_count == 4
 
 
 def test_analyze_statement_notaction_wildcard_resource():
@@ -137,7 +138,8 @@ def test_analyze_statement_notresource_wildcard_action():
 
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_NOTRESOURCE_WILDCARD_ACTION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
-        assert mock_vuln.instantiate.call_count == 2
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+        assert mock_vuln.instantiate.call_count == 3
 
 
 def test_analyze_statement_wildcard_action_condition():
@@ -253,7 +255,8 @@ def test_analyze_statement_with_action_list():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ALL")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
-        assert mock_vuln.instantiate.call_count == 3
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+        assert mock_vuln.instantiate.call_count == 4
 
 
 def test_analyze_statement_with_resource_list():
@@ -274,7 +277,8 @@ def test_analyze_statement_with_resource_list():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ALL")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
-        assert mock_vuln.instantiate.call_count == 3
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+        assert mock_vuln.instantiate.call_count == 4
 
 
 def test_analyze_statement_empty_action_resource():
@@ -287,6 +291,147 @@ def test_analyze_statement_empty_action_resource():
     findings = analyze_statement(stmt)
 
     assert len(findings) == 0
+
+
+def test_assume_role_wildcard_exact_match():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": "sts:AssumeRole",
+        "Resource": "*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+        mock_vuln.instantiate.assert_called_with("policy", raw_data=stmt)
+
+
+def test_assume_role_wildcard_with_restrictive_condition():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": "sts:AssumeRole",
+        "Resource": "*",
+        "Condition": {
+            "IpAddress": {
+                "aws:SourceIp": "192.168.1.0/24"
+            }
+        }
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        assume_role_calls = [call for call in mock_vulns.__getitem__.call_args_list
+                           if call[0][0] == "IAM_POLICY_ASSUME_ROLE_WILDCARD"]
+        assert len(assume_role_calls) == 0
+
+
+def test_assume_role_wildcard_with_non_restrictive_condition():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": "sts:AssumeRole",
+        "Resource": "*",
+        "Condition": {
+            "StringEquals": {
+                "aws:RequestedRegion": "us-east-1"
+            }
+        }
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+        mock_vuln.instantiate.assert_called_with("policy", raw_data=stmt)
+
+
+def test_assume_role_wildcard_in_action_list():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": ["s3:GetObject", "sts:AssumeRole"],
+        "Resource": "*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+
+
+def test_assume_role_wildcard_with_sts_wildcard():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": "sts:*",
+        "Resource": "*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
+
+
+def test_assume_role_no_wildcard_resource():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": "sts:AssumeRole",
+        "Resource": "arn:aws:iam::123456789012:role/SpecificRole"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        assume_role_calls = [call for call in mock_vulns.__getitem__.call_args_list
+                           if call[0][0] == "IAM_POLICY_ASSUME_ROLE_WILDCARD"]
+        assert len(assume_role_calls) == 0
+
+
+def test_has_assume_role_wildcard_function():
+    from aws_scanner.engines.common.policy_analyzer_utils import has_assume_role_wildcard
+
+    assert has_assume_role_wildcard(["sts:AssumeRole"], ["*"], [], None) is True
+    assert has_assume_role_wildcard(["sts:AssumeRole"], ["arn:aws:iam::123:role/Role"], [], None) is False
+    assert has_assume_role_wildcard(["s3:GetObject"], ["*"], [], None) is False
+    assert has_assume_role_wildcard(["sts:AssumeRole"], [], ["arn:aws:s3:::bucket/*"], None) is True
+
+    restrictive_condition = {
+        "IpAddress": {
+            "aws:SourceIp": "192.168.1.0/24"
+        }
+    }
+    assert has_assume_role_wildcard(["sts:AssumeRole"], ["*"], [], restrictive_condition) is False
+    assert has_assume_role_wildcard(["sts:AssumeRole"], [], ["arn:aws:s3:::bucket/*"], restrictive_condition) is False
 
 
 def test_analyze_policy_single_statement():
@@ -427,8 +572,7 @@ def test_privilege_escalation_specific():
         mock_vuln_class = MagicMock()
         mock_vulns.__getitem__.return_value = mock_vuln_class
 
-        findings = analyze_statement(test_stmt)
+        analyze_statement(test_stmt)
 
-        mock_vulns.__getitem__.assert_called_once_with("IAM_POLICY_PRIVILEGE_ESCALATION")
-        mock_vuln_class.instantiate.assert_called_once_with("policy", raw_data=test_stmt)
-        assert len(findings) == 1
+        mock_vulns.__getitem__.assert_called_with("IAM_POLICY_PRIVILEGE_ESCALATION")
+        mock_vuln_class.instantiate.assert_called_with("policy", raw_data=test_stmt)

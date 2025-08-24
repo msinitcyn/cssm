@@ -5,7 +5,8 @@
     "vulnerabilities": [
       "IAM_POLICY_WILDCARD_ALL",
       "IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION",
-      "IAM_POLICY_PRIVILEGE_ESCALATION"
+      "IAM_POLICY_PRIVILEGE_ESCALATION",
+      "IAM_POLICY_ASSUME_ROLE_WILDCARD"
     ]
   },
   {
@@ -13,6 +14,13 @@
     "name": "privilege_escalation",
     "vulnerabilities": [
       "IAM_POLICY_PRIVILEGE_ESCALATION"
+    ]
+  },
+  {
+    "type": "iam",
+    "name": "assume_role_wildcard",
+    "vulnerabilities": [
+      "IAM_POLICY_ASSUME_ROLE_WILDCARD"
     ]
   }
 ]

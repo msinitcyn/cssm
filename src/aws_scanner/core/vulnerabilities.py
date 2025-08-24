@@ -69,6 +69,13 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="iam_policy",
         remediation="Restrict IAM permissions or add conditions to prevent privilege escalation."
     ),
+    "IAM_POLICY_ASSUME_ROLE_WILDCARD": VulnerabilityTemplate(
+        id="IAM_POLICY_ASSUME_ROLE_WILDCARD",
+        description="Policy allows sts:AssumeRole on wildcard resources — can assume any role in any account",
+        severity="critical",
+        entity_type="iam_policy",
+        remediation="Restrict Resource to specific role ARNs or add restrictive conditions like aws:RequestedRegion."
+    ),
     "IAM_ROLE_BROAD_ASSUME_ROLE": VulnerabilityTemplate(
         id="IAM_ROLE_BROAD_ASSUME_ROLE",
         description="IAM Role trust policy allows sts:AssumeRole to Principal='*' or without restrictive conditions — critical lateral movement risk",

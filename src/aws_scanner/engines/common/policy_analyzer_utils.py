@@ -56,6 +56,29 @@ def has_privilege_escalation(actions, resources):
 
     return False
 
+def has_assume_role_wildcard(actions, resources, not_resources, condition):
+    # Check if this effectively grants access to wildcard resources
+    has_wildcard_resource = any(r == "*" for r in resources)
+    has_not_resource = len(not_resources) > 0
+
+    # If using NotResource, it means "everything except specified", which includes "*"
+    if not has_wildcard_resource and not has_not_resource:
+        return False
+
+    action_set = set(actions)
+    has_assume_role = any(
+        action == "sts:AssumeRole" or
+        action == "*" or
+        fnmatch.fnmatch("sts:AssumeRole", action) or
+        fnmatch.fnmatch(action, "sts:AssumeRole")
+        for action in action_set
+    )
+
+    if has_assume_role and not is_restrictive(condition):
+        return True
+
+    return False
+
 def analyze_statement(stmt: Dict[str, Any]) -> List[Dict[str, Any]]:
     findings = []
 
@@ -95,6 +118,9 @@ def analyze_statement(stmt: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     if has_privilege_escalation(action, resource):
         findings.append(VULNERABILITIES["IAM_POLICY_PRIVILEGE_ESCALATION"].instantiate("policy", raw_data=stmt))
+
+    if has_assume_role_wildcard(action, resource, not_resource, condition):
+        findings.append(VULNERABILITIES["IAM_POLICY_ASSUME_ROLE_WILDCARD"].instantiate("policy", raw_data=stmt))
 
     return findings
 

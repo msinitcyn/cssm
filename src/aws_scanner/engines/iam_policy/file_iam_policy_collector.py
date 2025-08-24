@@ -1,4 +1,4 @@
-from typing import List, Dict, Any, Union, Optional
+from typing import List, Dict, Any, Optional
 import json
 import logging
 from aws_scanner.engines.common.iam_policy_data import IamPolicyData
