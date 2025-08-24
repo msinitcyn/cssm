@@ -1,21 +1,19 @@
 {
-    "DeveloperRole": {
-        "name": "DeveloperRole",
-        "policy_type": "attached",
-        "arn": "arn:aws:iam::123456789012:policy/DeveloperRole",
-        "is_inline": false,
-        "document": {
-            "Version": "2012-10-17",
-            "Statement": [
-                {
-                    "Effect": "Allow",
-                    "Action": [
-                        "iam:CreateRole",
-                        "iam:AttachRolePolicy"
-                    ],
-                    "Resource": "*"
-                }
-            ]
-        }
+    "name": "DeveloperRole",
+    "policy_type": "attached",
+    "arn": "arn:aws:iam::123456789012:policy/DeveloperRole",
+    "is_inline": false,
+    "document": {
+        "Version": "2012-10-17",
+        "Statement": [
+            {
+                "Effect": "Allow",
+                "Action": [
+                    "iam:CreateRole",
+                    "iam:AttachRolePolicy"
+                ],
+                "Resource": "*"
+            }
+        ]
     }
 }
