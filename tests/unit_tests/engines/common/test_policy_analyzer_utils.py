@@ -99,7 +99,8 @@ def test_analyze_statement_wildcard_all():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
-        assert mock_vuln.instantiate.call_count == 4
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+        assert mock_vuln.instantiate.call_count == 5
 
 
 def test_analyze_statement_notaction_wildcard_resource():
@@ -139,7 +140,8 @@ def test_analyze_statement_notresource_wildcard_action():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_NOTRESOURCE_WILDCARD_ACTION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
-        assert mock_vuln.instantiate.call_count == 3
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+        assert mock_vuln.instantiate.call_count == 4
 
 
 def test_analyze_statement_wildcard_action_condition():
@@ -164,7 +166,8 @@ def test_analyze_statement_wildcard_action_condition():
 
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ACTION_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
-        assert mock_vuln.instantiate.call_count == 2
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+        assert mock_vuln.instantiate.call_count == 3
 
 
 def test_analyze_statement_notaction_condition():
@@ -212,12 +215,14 @@ def test_analyze_statement_wildcard_without_restrictive_condition():
 
             analyze_statement(stmt)
 
-            assert mock_vulns.__getitem__.call_count == 2
+            assert mock_vulns.__getitem__.call_count == 3
             mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_ACTION_CONDITION")
             mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
+            mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
 
-            assert mock_vuln.instantiate.call_count == 2
+            assert mock_vuln.instantiate.call_count == 3
             mock_vuln.instantiate.assert_has_calls([
+                call("policy", raw_data=stmt),
                 call("policy", raw_data=stmt),
                 call("policy", raw_data=stmt)
             ])
@@ -228,8 +233,8 @@ def test_analyze_statement_no_findings():
 
     stmt = {
         "Effect": "Allow",
-        "Action": "s3:GetObject",
-        "Resource": "arn:aws:s3:::bucket/*"
+        "Action": "s3:ListBucket",
+        "Resource": "arn:aws:s3:::bucket"
     }
 
     findings = analyze_statement(stmt)
@@ -242,7 +247,7 @@ def test_analyze_statement_with_action_list():
 
     stmt = {
         "Effect": "Allow",
-        "Action": ["s3:GetObject", "*"],
+        "Action": ["s3:PutObject", "*"],
         "Resource": "*"
     }
 
@@ -256,7 +261,8 @@ def test_analyze_statement_with_action_list():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
-        assert mock_vuln.instantiate.call_count == 4
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+        assert mock_vuln.instantiate.call_count == 5
 
 
 def test_analyze_statement_with_resource_list():
@@ -278,7 +284,8 @@ def test_analyze_statement_with_resource_list():
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
         mock_vulns.__getitem__.assert_any_call("IAM_POLICY_ASSUME_ROLE_WILDCARD")
-        assert mock_vuln.instantiate.call_count == 4
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+        assert mock_vuln.instantiate.call_count == 5
 
 
 def test_analyze_statement_empty_action_resource():
@@ -558,9 +565,9 @@ def test_analyze_policy_empty_statements():
 
     assert len(findings) == 0
 
+
 def test_privilege_escalation_specific():
     from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
-    from unittest.mock import patch, MagicMock
 
     test_stmt = {
         "Effect": "Allow",
@@ -574,5 +581,205 @@ def test_privilege_escalation_specific():
 
         analyze_statement(test_stmt)
 
-        mock_vulns.__getitem__.assert_called_with("IAM_POLICY_PRIVILEGE_ESCALATION")
-        mock_vuln_class.instantiate.assert_called_with("policy", raw_data=test_stmt)
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_PRIVILEGE_ESCALATION")
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+
+        privilege_escalation_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_PRIVILEGE_ESCALATION"
+        ]
+        assert len(privilege_escalation_calls) == 1
+
+        sensitive_actions_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
+        ]
+        assert len(sensitive_actions_calls) == 1
+
+
+# NEW TESTS FOR SENSITIVE ACTIONS WITHOUT CONDITIONS
+
+
+def test_sensitive_actions_without_conditions():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": [
+            "s3:GetObject",
+            "s3:PutObject",
+            "s3:DeleteObject"
+        ],
+        "Resource": "arn:aws:s3:::sensitive-bucket/*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+
+        sensitive_action_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
+        ]
+        assert len(sensitive_action_calls) == 1
+
+
+def test_sensitive_actions_with_restrictive_conditions():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": [
+            "s3:GetObject",
+            "s3:PutObject"
+        ],
+        "Resource": "arn:aws:s3:::sensitive-bucket/*",
+        "Condition": {
+            "IpAddress": {
+                "aws:SourceIp": "203.0.113.0/24"
+            },
+            "Bool": {
+                "aws:SecureTransport": "true"
+            }
+        }
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        sensitive_action_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
+        ]
+        assert len(sensitive_action_calls) == 0
+
+
+def test_sensitive_actions_with_non_restrictive_conditions():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": [
+            "s3:DeleteObject"
+        ],
+        "Resource": "arn:aws:s3:::sensitive-bucket/*",
+        "Condition": {
+            "StringEquals": {
+                "s3:prefix": "home/"
+            }
+        }
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+
+
+def test_non_sensitive_actions_without_conditions():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": [
+            "s3:ListBucket",
+            "ec2:DescribeInstances"
+        ],
+        "Resource": "*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        sensitive_action_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
+        ]
+        assert len(sensitive_action_calls) == 0
+
+
+def test_wildcard_actions_include_sensitive():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": "s3:*",
+        "Resource": "arn:aws:s3:::bucket/*"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+
+
+def test_has_sensitive_actions_without_conditions_function():
+    from aws_scanner.engines.common.policy_analyzer_utils import has_sensitive_actions_without_conditions
+
+    actions = ["s3:GetObject", "s3:PutObject"]
+    assert has_sensitive_actions_without_conditions(actions, None) is True
+
+    restrictive_condition = {
+        "IpAddress": {
+            "aws:SourceIp": "192.168.1.0/24"
+        }
+    }
+    assert has_sensitive_actions_without_conditions(actions, restrictive_condition) is False
+
+    non_sensitive_actions = ["s3:ListBucket", "ec2:DescribeInstances"]
+    assert has_sensitive_actions_without_conditions(non_sensitive_actions, None) is False
+
+    wildcard_actions = ["s3:*"]
+    assert has_sensitive_actions_without_conditions(wildcard_actions, None) is True
+
+    iam_actions = ["iam:CreateUser", "iam:AttachUserPolicy"]
+    assert has_sensitive_actions_without_conditions(iam_actions, None) is True
+
+
+def test_iam_sensitive_actions():
+    from aws_scanner.engines.common.policy_analyzer_utils import analyze_statement
+
+    stmt = {
+        "Effect": "Allow",
+        "Action": [
+            "iam:CreateRole",
+            "iam:AttachRolePolicy"
+        ],
+        "Resource": "arn:aws:iam::123456789012:role/MyRole"
+    }
+
+    with patch("aws_scanner.engines.common.policy_analyzer_utils.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        analyze_statement(stmt)
+
+        mock_vulns.__getitem__.assert_any_call("IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS")
+
+        sensitive_actions_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
+        ]
+        assert len(sensitive_actions_calls) == 1
+
+        privilege_escalation_calls = [
+            call for call in mock_vulns.__getitem__.call_args_list
+            if call[0][0] == "IAM_POLICY_PRIVILEGE_ESCALATION"
+        ]
+        assert len(privilege_escalation_calls) == 0

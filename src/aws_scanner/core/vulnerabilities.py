@@ -76,6 +76,13 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="iam_policy",
         remediation="Restrict Resource to specific role ARNs or add restrictive conditions like aws:RequestedRegion."
     ),
+    "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS": VulnerabilityTemplate(
+        id="IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS",
+        description="Policy allows sensitive actions without restrictive conditions — access should be limited by IP, MFA, time, or other constraints",
+        severity="medium",
+        entity_type="iam_policy",
+        remediation="Add restrictive conditions such as aws:SourceIp, aws:MultiFactorAuthPresent, or aws:RequestedRegion to limit access."
+    ),
     "IAM_ROLE_BROAD_ASSUME_ROLE": VulnerabilityTemplate(
         id="IAM_ROLE_BROAD_ASSUME_ROLE",
         description="IAM Role trust policy allows sts:AssumeRole to Principal='*' or without restrictive conditions — critical lateral movement risk",

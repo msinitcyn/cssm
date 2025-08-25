@@ -6,14 +6,16 @@
       "IAM_POLICY_WILDCARD_ALL",
       "IAM_POLICY_WILDCARD_WITHOUT_RESTRICTIVE_CONDITION",
       "IAM_POLICY_PRIVILEGE_ESCALATION",
-      "IAM_POLICY_ASSUME_ROLE_WILDCARD"
+      "IAM_POLICY_ASSUME_ROLE_WILDCARD",
+      "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
     ]
   },
   {
     "type": "iam",
     "name": "privilege_escalation",
     "vulnerabilities": [
-      "IAM_POLICY_PRIVILEGE_ESCALATION"
+      "IAM_POLICY_PRIVILEGE_ESCALATION",
+      "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
     ]
   },
   {
@@ -21,6 +23,13 @@
     "name": "assume_role_wildcard",
     "vulnerabilities": [
       "IAM_POLICY_ASSUME_ROLE_WILDCARD"
+    ]
+  },
+  {
+    "type": "iam",
+    "name": "missing_conditions",
+    "vulnerabilities": [
+      "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
     ]
   }
 ]

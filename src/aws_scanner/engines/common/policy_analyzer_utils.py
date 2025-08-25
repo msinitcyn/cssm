@@ -10,6 +10,30 @@ RESTRICTIVE_KEYS = {
     "aws:PrincipalOrgId",
 }
 
+SENSITIVE_ACTIONS = {
+    "s3:GetObject", "s3:PutObject", "s3:DeleteObject",
+    "s3:GetObjectVersion", "s3:PutObjectAcl", "s3:DeleteObjectVersion",
+
+    "s3:DeleteBucket", "s3:PutBucketPolicy", "s3:DeleteBucketPolicy",
+    "s3:PutBucketAcl", "s3:PutBucketVersioning",
+
+    "iam:CreateUser", "iam:DeleteUser", "iam:CreateRole", "iam:DeleteRole",
+    "iam:AttachUserPolicy", "iam:AttachRolePolicy", "iam:PutUserPolicy", "iam:PutRolePolicy",
+    "iam:CreateAccessKey", "iam:DeleteAccessKey",
+
+    "ec2:TerminateInstances", "ec2:StopInstances", "ec2:CreateSecurityGroup",
+    "ec2:AuthorizeSecurityGroupIngress", "ec2:RevokeSecurityGroupIngress",
+
+    "rds:DeleteDBInstance", "rds:DeleteDBCluster", "rds:ModifyDBInstance",
+
+    "secretsmanager:GetSecretValue", "secretsmanager:UpdateSecret", "secretsmanager:DeleteSecret",
+    "ssm:GetParameter", "ssm:GetParameters", "ssm:PutParameter", "ssm:DeleteParameter",
+
+    "lambda:UpdateFunctionCode", "lambda:DeleteFunction", "lambda:InvokeFunction",
+
+    "cloudformation:CreateStack", "cloudformation:UpdateStack", "cloudformation:DeleteStack",
+}
+
 def is_restrictive(condition: Any) -> bool:
     if not isinstance(condition, dict):
         return False
@@ -20,6 +44,22 @@ def is_restrictive(condition: Any) -> bool:
         for key in cond_block:
             if key in RESTRICTIVE_KEYS:
                 return True
+    return False
+
+def has_sensitive_actions_without_conditions(actions: List[str], condition: Any) -> bool:
+    if condition and is_restrictive(condition):
+        return False
+
+    action_set = set(actions)
+
+    for action in action_set:
+        if action in SENSITIVE_ACTIONS:
+            return True
+
+        for sensitive_action in SENSITIVE_ACTIONS:
+            if fnmatch.fnmatch(sensitive_action, action):
+                return True
+
     return False
 
 PRIVILEGE_ESCALATION_PATTERNS = [
@@ -57,11 +97,9 @@ def has_privilege_escalation(actions, resources):
     return False
 
 def has_assume_role_wildcard(actions, resources, not_resources, condition):
-    # Check if this effectively grants access to wildcard resources
     has_wildcard_resource = any(r == "*" for r in resources)
     has_not_resource = len(not_resources) > 0
 
-    # If using NotResource, it means "everything except specified", which includes "*"
     if not has_wildcard_resource and not has_not_resource:
         return False
 
@@ -121,6 +159,9 @@ def analyze_statement(stmt: Dict[str, Any]) -> List[Dict[str, Any]]:
 
     if has_assume_role_wildcard(action, resource, not_resource, condition):
         findings.append(VULNERABILITIES["IAM_POLICY_ASSUME_ROLE_WILDCARD"].instantiate("policy", raw_data=stmt))
+
+    if has_sensitive_actions_without_conditions(action, condition):
+        findings.append(VULNERABILITIES["IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"].instantiate("policy", raw_data=stmt))
 
     return findings
 
