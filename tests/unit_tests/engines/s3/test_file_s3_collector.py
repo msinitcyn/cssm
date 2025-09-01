@@ -6,18 +6,26 @@ from aws_scanner.engines.common.iam_policy_data import IamPolicyData
 
 def test_collect_success():
     test_data = {
-        "policy1": {
-            "name": "test-policy1",
-            "policy_type": "managed",
-            "document": {"Version": "2012-10-17", "Statement": []},
-            "arn": "arn:aws:iam::123456789012:policy/test-policy1",
-            "is_inline": False
+        "bucket1": {
+            "bucket_name": "test-bucket1",
+            "policy": {"Version": "2012-10-17", "Statement": []},
+            "acl": "public-read",
+            "block_public_access": {
+                "BlockPublicAcls": False,
+                "IgnorePublicAcls": False,
+                "BlockPublicPolicy": False,
+                "RestrictPublicBuckets": False
+            },
+            "server_access_logging": {"enabled": True},
+            "versioning": {"status": "Enabled"},
+            "encryption": {"server_side_encryption": "AES256"},
+            "mfa_delete": True
         },
-        "policy2": {
-            "name": "test-policy2",
-            "policy_type": "inline",
-            "document": {"Version": "2012-10-17", "Statement": [{"Effect": "Allow"}]},
-            "is_inline": True
+        "bucket2": {
+            "name": "test-bucket2",
+            "policy": {"Version": "2012-10-17", "Statement": [{"Effect": "Allow"}]},
+            "acl": "private",
+            "mfa_delete": "false"
         }
     }
 
@@ -30,40 +38,87 @@ def test_collect_success():
         assert len(results) == 2
 
         bucket1 = results[0]
-        assert bucket1.name == "bucket-0"
+        assert bucket1.name == "test-bucket1"
         assert isinstance(bucket1.policy, IamPolicyData)
-        assert bucket1.policy.name == "test-policy1"
-        assert bucket1.policy.policy_type == "managed"
+        assert bucket1.policy.name == "test-bucket1-bucket-policy"
+        assert bucket1.policy.policy_type == "resource"
         assert bucket1.policy.document == {"Version": "2012-10-17", "Statement": []}
-        assert bucket1.policy.arn == "arn:aws:iam::123456789012:policy/test-policy1"
+        assert bucket1.policy.arn is None
         assert bucket1.policy.is_inline is False
+        assert len(bucket1.acl_grants) == 1
+        assert bucket1.acl_grants[0]["Permission"] == "READ"
+        assert bucket1.pab_config["BlockPublicAcls"] is False
+        assert bucket1.server_access_logging == {"enabled": True}
+        assert bucket1.versioning == {"status": "Enabled"}
+        assert bucket1.encryption == {"server_side_encryption": "AES256"}
+        assert bucket1.mfa_delete is True
 
         bucket2 = results[1]
-        assert bucket2.name == "bucket-1"
-        assert bucket2.policy.name == "test-policy2"
-        assert bucket2.policy.policy_type == "inline"
+        assert bucket2.name == "test-bucket2"
+        assert bucket2.policy.name == "test-bucket2-bucket-policy"
         assert bucket2.policy.document == {"Version": "2012-10-17", "Statement": [{"Effect": "Allow"}]}
-        assert bucket2.policy.arn is None
-        assert bucket2.policy.is_inline is True
+        assert len(bucket2.acl_grants) == 0
+        assert bucket2.mfa_delete is False
 
     mock_file.assert_called_once_with("/path/to/buckets.json", 'r')
 
-def test_collect_missing_required_field():
+def test_collect_single_bucket():
     test_data = {
-        "policy1": {
-            "name": "test-policy",
-            # missing "policy_type" field
-            "document": {}
-        }
+        "bucket_name": "single-bucket",
+        "policy": {"Version": "2012-10-17", "Statement": []},
+        "acl": "public-read-write"
     }
 
     mock_file = mock_open(read_data=json.dumps(test_data))
 
     with patch("builtins.open", mock_file):
-        collector = FileS3Collector("/path/to/buckets.json")
+        collector = FileS3Collector("/path/to/bucket.json")
+        results = collector.collect()
 
-        with pytest.raises(KeyError):
-            collector.collect()
+        assert len(results) == 1
+        assert results[0].name == "single-bucket"
+        assert len(results[0].acl_grants) == 2
+        assert results[0].acl_grants[0]["Permission"] == "READ"
+        assert results[0].acl_grants[1]["Permission"] == "WRITE"
+
+def test_collect_list_format():
+    test_data = [
+        {
+            "bucket_name": "bucket-1",
+            "policy": {"Version": "2012-10-17", "Statement": []},
+            "acl": "private"
+        },
+        {
+            "name": "bucket-2",
+            "policy": {"Version": "2012-10-17", "Statement": []},
+            "acl": "public-read"
+        }
+    ]
+
+    mock_file = mock_open(read_data=json.dumps(test_data))
+
+    with patch("builtins.open", mock_file):
+        collector = FileS3Collector("/path/to/buckets.json")
+        results = collector.collect()
+
+        assert len(results) == 2
+        assert results[0].name == "bucket-1"
+        assert results[1].name == "bucket-2"
+
+def test_collect_no_policy():
+    test_data = {
+        "bucket_name": "no-policy-bucket",
+        "acl": "private"
+    }
+
+    mock_file = mock_open(read_data=json.dumps(test_data))
+
+    with patch("builtins.open", mock_file):
+        collector = FileS3Collector("/path/to/bucket.json")
+        results = collector.collect()
+
+        assert len(results) == 1
+        assert results[0].policy is None
 
 def test_collect_empty_file():
     mock_file = mock_open(read_data="{}")
@@ -90,24 +145,52 @@ def test_collect_file_not_found():
         with pytest.raises(FileNotFoundError):
             collector.collect()
 
-def test_collect_with_default_values():
+def test_acl_string_conversion():
+    collector = FileS3Collector("/path/to/test.json")
+
+    public_read_grants = collector._convert_acl_string_to_grants("public-read")
+    assert len(public_read_grants) == 1
+    assert public_read_grants[0]["Permission"] == "READ"
+
+    public_read_write_grants = collector._convert_acl_string_to_grants("public-read-write")
+    assert len(public_read_write_grants) == 2
+
+    private_grants = collector._convert_acl_string_to_grants("private")
+    assert len(private_grants) == 0
+
+    unknown_grants = collector._convert_acl_string_to_grants("unknown")
+    assert len(unknown_grants) == 0
+
+def test_collect_with_pab_config_alias():
     test_data = {
-        "policy_key": {
-            "policy_type": "managed",
-            # missing name, document, arn and is_inline
+        "bucket_name": "test-bucket",
+        "pab_config": {
+            "BlockPublicAcls": True,
+            "IgnorePublicAcls": False
         }
     }
 
     mock_file = mock_open(read_data=json.dumps(test_data))
 
     with patch("builtins.open", mock_file):
-        collector = FileS3Collector("/path/to/buckets.json")
+        collector = FileS3Collector("/path/to/bucket.json")
         results = collector.collect()
 
         assert len(results) == 1
-        bucket = results[0]
-        assert bucket.name == "bucket-0"
-        assert bucket.policy.name == "policy_key"
-        assert bucket.policy.document == {}
-        assert bucket.policy.arn is None
-        assert bucket.policy.is_inline is True
+        assert results[0].pab_config["BlockPublicAcls"] is True
+
+def test_collect_fallback_bucket_names():
+    test_data = {
+        "bucket_without_name": {
+            "acl": "private"
+        }
+    }
+
+    mock_file = mock_open(read_data=json.dumps(test_data))
+
+    with patch("builtins.open", mock_file):
+        collector = FileS3Collector("/path/to/bucket.json")
+        results = collector.collect()
+
+        assert len(results) == 1
+        assert results[0].name == "bucket-0"

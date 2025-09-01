@@ -37,11 +37,11 @@ def analyze_policy(bucket_data) -> Tuple[bool, bool]:
     if block_policy and restrict_policy:
         return False, False
 
-    policy = bucket_data.policy_doc or {}
+    policy_doc = bucket_data.policy.document if bucket_data.policy else {}
     is_public_policy = False
     condition_present = False
 
-    for stmt in policy.get("Statement", []):
+    for stmt in policy_doc.get("Statement", []):
         if stmt.get("Effect") != "Allow":
             continue
         principal = stmt.get("Principal")
@@ -73,13 +73,13 @@ def check_acl_vulnerability(bucket_data) -> List[Dict[str, Any]]:
 def check_policy_vulnerabilities(bucket_data) -> List[Dict[str, Any]]:
     is_policy, has_condition = analyze_policy(bucket_data)
     findings = []
-    
+
     if is_policy:
         findings.append(VULNERABILITIES["S3_PUBLIC_POLICY"].instantiate(bucket_data.name))
-    
+
     if not is_policy and has_condition:
         findings.append(VULNERABILITIES["S3_POTENTIALLY_PUBLIC_POLICY_CONDITION"].instantiate(bucket_data.name))
-    
+
     return findings
 
 def check_cors_vulnerabilities(bucket_data) -> List[Dict[str, Any]]:
@@ -95,10 +95,81 @@ def check_website_vulnerability(bucket_data) -> List[Dict[str, Any]]:
         return [VULNERABILITIES["S3_PUBLIC_WEBSITE"].instantiate(bucket_data.name)]
     return []
 
+def check_logging_vulnerability(bucket_data) -> List[Dict[str, Any]]:
+    findings = []
+    logging_config = bucket_data.server_access_logging or {}
+
+    if not logging_config or not logging_config.get("enabled", True):
+        findings.append({
+            "id": "S3_NO_ACCESS_LOGGING",
+            "description": "S3 bucket does not have server access logging enabled",
+            "severity": "low",
+            "entity_type": "s3_bucket",
+            "entity_name": bucket_data.name,
+            "remediation": "Enable server access logging to track bucket access",
+            "raw_data": logging_config
+        })
+
+    return findings
+
+def check_versioning_vulnerability(bucket_data) -> List[Dict[str, Any]]:
+    findings = []
+    versioning_config = bucket_data.versioning or {}
+
+    if versioning_config.get("status") == "Suspended":
+        findings.append({
+            "id": "S3_VERSIONING_SUSPENDED",
+            "description": "S3 bucket versioning is suspended",
+            "severity": "medium",
+            "entity_type": "s3_bucket",
+            "entity_name": bucket_data.name,
+            "remediation": "Enable versioning to protect against accidental deletion or modification",
+            "raw_data": versioning_config
+        })
+
+    return findings
+
+def check_encryption_vulnerability(bucket_data) -> List[Dict[str, Any]]:
+    findings = []
+    encryption_config = bucket_data.encryption or {}
+
+    if not encryption_config or encryption_config.get("server_side_encryption") == "none":
+        findings.append({
+            "id": "S3_NO_ENCRYPTION",
+            "description": "S3 bucket does not have server-side encryption enabled",
+            "severity": "high",
+            "entity_type": "s3_bucket",
+            "entity_name": bucket_data.name,
+            "remediation": "Enable server-side encryption with AWS KMS or AES-256",
+            "raw_data": encryption_config
+        })
+
+    return findings
+
+def check_mfa_delete_vulnerability(bucket_data) -> List[Dict[str, Any]]:
+    findings = []
+
+    if bucket_data.mfa_delete is False:
+        findings.append({
+            "id": "S3_MFA_DELETE_DISABLED",
+            "description": "S3 bucket does not have MFA Delete enabled",
+            "severity": "medium",
+            "entity_type": "s3_bucket",
+            "entity_name": bucket_data.name,
+            "remediation": "Enable MFA Delete to require multi-factor authentication for object deletion",
+            "raw_data": {"mfa_delete": bucket_data.mfa_delete}
+        })
+
+    return findings
+
 def analyze_s3_bucket(bucket_data) -> List[Dict[str, Any]]:
     findings = []
     findings.extend(check_acl_vulnerability(bucket_data))
     findings.extend(check_policy_vulnerabilities(bucket_data))
     findings.extend(check_cors_vulnerabilities(bucket_data))
     findings.extend(check_website_vulnerability(bucket_data))
+    findings.extend(check_logging_vulnerability(bucket_data))
+    findings.extend(check_versioning_vulnerability(bucket_data))
+    findings.extend(check_encryption_vulnerability(bucket_data))
+    findings.extend(check_mfa_delete_vulnerability(bucket_data))
     return findings
