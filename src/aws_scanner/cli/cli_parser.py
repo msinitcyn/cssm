@@ -35,7 +35,10 @@ def get_args():
         return argparse.Namespace(**vars(args), **vars(sg_args))
 
     elif args.command == "s3":
-        return args
+        s3_parser = argparse.ArgumentParser(description="Scan S3 buckets")
+        s3_parser.add_argument("--file", type=Path, help="Path to local S3 configuration JSON file")
+        s3_args = s3_parser.parse_args(remaining)
+        return argparse.Namespace(**vars(args), **vars(s3_args))
 
     else:
         parser.print_help()
