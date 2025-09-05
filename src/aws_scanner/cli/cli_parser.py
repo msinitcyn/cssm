@@ -14,16 +14,16 @@ def get_args():
 
     if args.command == "iam":
         iam_parser = argparse.ArgumentParser(description="Scan IAM roles or policies")
-        iam_parser.add_argument("--policies-only", action="store_true",
+        iam_parser.add_argument("--policies", action="store_true",
                                 help="Scan only policies without checking trust relationships")
         iam_parser.add_argument("--attached-only", action="store_true",
-                                help="Limit scan to only policies attached to roles (requires --policies-only)")
+                                help="Limit scan to only policies attached to roles (requires --policies)")
         iam_parser.add_argument("--file", type=Path,
                                 help="Path to local IAM policy JSON file (runs in standalone mode)")
         iam_args = iam_parser.parse_args(remaining)
 
-        if iam_args.attached_only and not iam_args.policies_only:
-            print("Error: --attached-only can only be used together with --policies-only", file=sys.stderr)
+        if iam_args.attached_only and not iam_args.policies:
+            print("Error: --attached-only can only be used together with --policies", file=sys.stderr)
             sys.exit(1)
 
         return argparse.Namespace(**vars(args), **vars(iam_args))

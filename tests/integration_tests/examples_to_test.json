@@ -1,6 +1,7 @@
 [
   {
-    "type": "iam_policies",
+    "service": "iam",
+    "entity_type": "policies",
     "name": "wildcard_admin",
     "vulnerabilities": [
       "IAM_POLICY_WILDCARD_ALL",
@@ -11,7 +12,8 @@
     ]
   },
   {
-    "type": "iam_policies",
+    "service": "iam",
+    "entity_type": "policies",
     "name": "privilege_escalation",
     "vulnerabilities": [
       "IAM_POLICY_PRIVILEGE_ESCALATION",
@@ -19,21 +21,24 @@
     ]
   },
   {
-    "type": "iam_policies",
+    "service": "iam",
+    "entity_type": "policies",
     "name": "assume_role_wildcard",
     "vulnerabilities": [
       "IAM_POLICY_ASSUME_ROLE_WILDCARD"
     ]
   },
   {
-    "type": "iam_policies",
+    "service": "iam",
+    "entity_type": "policies",
     "name": "missing_conditions",
     "vulnerabilities": [
       "IAM_POLICY_SENSITIVE_ACTIONS_WITHOUT_CONDITIONS"
     ]
   },
   {
-    "type": "s3",
+    "service": "s3",
+    "entity_type": "",
     "name": "public_s3_bucket",
     "vulnerabilities": [
       "S3_PUBLIC_ACL",
@@ -43,7 +48,8 @@
     ]
   },
   {
-    "type": "s3",
+    "service": "s3",
+    "entity_type": "",
     "name": "s3_without_encryption",
     "vulnerabilities": [
       "S3_NO_ACCESS_LOGGING",

@@ -1,0 +1,19 @@
+{
+    "name": "OldUnusedUser",
+    "resource_type": "iam_user", 
+    "user_name": "former.employee",
+    "access_keys": [
+        {
+            "access_key_id": "AKIA3456789012345678",
+            "status": "Active",
+            "create_date": "2021-03-10T10:30:00Z", 
+            "last_used": "2023-08-15T14:22:00Z"
+        }
+    ],
+    "password_last_used": "2023-07-20T11:30:00Z",
+    "mfa_enabled": true,
+    "user_creation_date": "2021-03-01T09:00:00Z",
+    "attached_policies": [
+        "arn:aws:iam::aws:policy/PowerUserAccess"
+    ]
+}

@@ -21,6 +21,7 @@ class VulnerabilityTemplate:
         }
 
 VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
+    # IAM Policy Vulnerabilities
     "IAM_POLICY_WILDCARD_ALL": VulnerabilityTemplate(
         id="IAM_POLICY_WILDCARD_ALL",
         description='Too permissive: Action="*", Resource="*"',
@@ -83,6 +84,8 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="iam_policy",
         remediation="Add restrictive conditions such as aws:SourceIp, aws:MultiFactorAuthPresent, or aws:RequestedRegion to limit access."
     ),
+
+    # IAM Role Vulnerabilities
     "IAM_ROLE_BROAD_ASSUME_ROLE": VulnerabilityTemplate(
         id="IAM_ROLE_BROAD_ASSUME_ROLE",
         description="IAM Role trust policy allows sts:AssumeRole to Principal='*' or without restrictive conditions — critical lateral movement risk",
@@ -90,6 +93,68 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="iam_role",
         remediation="Restrict Principal in trust policy and add Condition to limit AssumeRole access."
     ),
+
+    # IAM User Vulnerabilities
+    "IAM_USER_NO_MFA_HIGH_PRIVILEGE": VulnerabilityTemplate(
+        id="IAM_USER_NO_MFA_HIGH_PRIVILEGE",
+        description="High-privilege IAM user does not have MFA enabled — critical account protection missing",
+        severity="critical",
+        entity_type="iam_user",
+        remediation="Enable MFA for all users with administrative or high-privilege access."
+    ),
+    "IAM_USER_CONSOLE_ACCESS_NO_MFA": VulnerabilityTemplate(
+        id="IAM_USER_CONSOLE_ACCESS_NO_MFA",
+        description="IAM user with console access does not have MFA enabled — password-only authentication risk",
+        severity="high",
+        entity_type="iam_user",
+        remediation="Enable MFA for all users with console access."
+    ),
+    "IAM_USER_INACTIVE_ACCESS_KEY": VulnerabilityTemplate(
+        id="IAM_USER_INACTIVE_ACCESS_KEY",
+        description="IAM user has access keys that haven't been used in over 90 days — stale credentials increase attack surface",
+        severity="medium",
+        entity_type="iam_user",
+        remediation="Deactivate or delete unused access keys to reduce attack surface."
+    ),
+    "IAM_USER_UNUSED_ACCESS_KEY": VulnerabilityTemplate(
+        id="IAM_USER_UNUSED_ACCESS_KEY",
+        description="IAM user has access keys that have never been used — unnecessary credentials create security risk",
+        severity="medium",
+        entity_type="iam_user",
+        remediation="Delete access keys that have never been used."
+    ),
+    "IAM_USER_OLD_ACCESS_KEY": VulnerabilityTemplate(
+        id="IAM_USER_OLD_ACCESS_KEY",
+        description="IAM user has access keys older than 365 days — rotation needed to reduce compromise risk",
+        severity="high",
+        entity_type="iam_user",
+        remediation="Rotate access keys regularly (recommended: every 90-365 days)."
+    ),
+    "IAM_USER_STALE_ACCOUNT": VulnerabilityTemplate(
+        id="IAM_USER_STALE_ACCOUNT",
+        description="IAM user account has not been active for over 365 days but still has active credentials",
+        severity="high",
+        entity_type="iam_user",
+        remediation="Disable or delete inactive user accounts and review if access is still needed."
+    ),
+
+    # Root User Vulnerabilities
+    "IAM_ROOT_USER_ACCESS_KEYS": VulnerabilityTemplate(
+        id="IAM_ROOT_USER_ACCESS_KEYS",
+        description="Root user has active access keys — creates unnecessary security risk and violates best practices",
+        severity="critical",
+        entity_type="iam_root_user",
+        remediation="Delete root user access keys and use IAM users with appropriate permissions instead."
+    ),
+    "IAM_ROOT_USER_NO_MFA": VulnerabilityTemplate(
+        id="IAM_ROOT_USER_NO_MFA",
+        description="Root user does not have MFA enabled — critical account protection missing",
+        severity="critical",
+        entity_type="iam_root_user",
+        remediation="Enable MFA for root user account immediately."
+    ),
+
+    # S3 Vulnerabilities
     "S3_PUBLIC_ACL": VulnerabilityTemplate(
         id="S3_PUBLIC_ACL",
         description="S3 bucket is publicly accessible via ACL.",
@@ -125,6 +190,8 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="s3_bucket",
         remediation="Restrict website configuration or disable if not needed."
     ),
+
+    # Security Group Vulnerabilities
     "SG_OPEN_PORT": VulnerabilityTemplate(
         id="SG_OPEN_PORT",
         description="Security Group allows access to dangerous or all ports from open CIDR",

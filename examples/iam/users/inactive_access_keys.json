@@ -1,0 +1,21 @@
+{
+    "name": "UserWithInactiveKeys", 
+    "resource_type": "iam_user",
+    "user_name": "legacy.service",
+    "access_keys": [
+        {
+            "access_key_id": "AKIA1234567890123456",
+            "status": "Active",
+            "create_date": "2022-01-15T10:30:00Z",
+            "last_used": "2022-03-20T14:22:00Z"
+        },
+        {
+            "access_key_id": "AKIA6789012345678901",
+            "status": "Active", 
+            "create_date": "2023-06-01T09:15:00Z",
+            "last_used": null
+        }
+    ],
+    "password_last_used": null,
+    "mfa_enabled": false
+}

@@ -21,11 +21,13 @@ def get_examples():
 
     examples = []
     for example_data in examples_data:
-        if 'name' not in example_data or 'vulnerabilities' not in example_data or 'type' not in example_data:
-            raise ValueError(f"Example missing required fields 'name', 'type', or 'vulnerabilities': {example_data}")
+        required_fields = ['service', 'entity_type', 'name', 'vulnerabilities']
+        if not all(field in example_data for field in required_fields):
+            raise ValueError(f"Example missing required fields {required_fields}: {example_data}")
 
         example = Example(
-            type=example_data['type'],
+            service=example_data['service'],
+            entity_type=example_data['entity_type'],
             name=example_data['name'],
             vulnerabilities=example_data['vulnerabilities']
         )
@@ -39,15 +41,15 @@ def run_scanner(example: Example):
     if output_path.exists():
         output_path.unlink()
 
-    if example.type == "iam_policies":
+    if example.service == "iam" and example.entity_type == "policies":
         cmd = [
             sys.executable, "-m", "aws_scanner.cli.main",
             "--output", example.get_output_path(),
             "iam",
-            "--policies-only",
+            "--policies",
             "--file", example.get_path()
         ]
-    elif example.type == "s3":
+    elif example.service == "s3" and example.entity_type == "":
         cmd = [
             sys.executable, "-m", "aws_scanner.cli.main",
             "--output", example.get_output_path(),
@@ -55,7 +57,7 @@ def run_scanner(example: Example):
             "--file", example.get_path()
         ]
     else:
-        raise ValueError(f"Unsupported example type: {example.type}")
+        raise ValueError(f"Unsupported example configuration: service={example.service}, entity_type={example.entity_type}")
 
     result = subprocess.run(
         cmd,
@@ -81,12 +83,12 @@ def validate_results(example: Example, scanner_output):
     if not isinstance(scanner_output, dict):
         raise AssertionError(f"Scanner output should be a dict, got {type(scanner_output)}")
 
-    if example.type == "iam_policies":
+    if example.service == "iam" and example.entity_type == "policies":
         result_key = 'iam_policies'
-    elif example.type == "s3":
+    elif example.service == "s3" and example.entity_type == "":
         result_key = 's3_buckets'
     else:
-        raise ValueError(f"Unsupported example type: {example.type}")
+        raise ValueError(f"Unknown result key for service={example.service}, entity_type={example.entity_type}")
 
     if result_key not in scanner_output:
         raise AssertionError(f"Scanner output missing '{result_key}' field. Available fields: {list(scanner_output.keys())}")
@@ -125,7 +127,7 @@ def validate_results(example: Example, scanner_output):
         ])
         raise AssertionError("\n".join(error_msg))
 
-    print(f"Example '{example.name}' passed validation:")
+    print(f"Example '{example.service}/{example.entity_type}/{example.name}' passed validation:")
     print(f"Expected vulnerabilities: {sorted(expected_vuln_ids)}")
     print(f"Found vulnerabilities: {sorted(found_vuln_ids)}")
 
@@ -136,7 +138,7 @@ def test_examples():
         print(f"Running tests for {len(examples)} example(s)...")
 
         for i, example in enumerate(examples, 1):
-            print(f"\n--- Test {i}/{len(examples)}: {example.type}/{example.name} ---")
+            print(f"\n--- Test {i}/{len(examples)}: {example.service}/{example.entity_type}/{example.name} ---")
 
             input_path = Path(example.get_path())
             if not input_path.exists():
@@ -145,7 +147,7 @@ def test_examples():
             try:
                 scanner_output = run_scanner(example)
                 validate_results(example, scanner_output)
-                print(f"✓ Test {i} passed: {example.type}/{example.name}")
+                print(f"✓ Test {i} passed: {example.service}/{example.entity_type}/{example.name}")
 
             except subprocess.TimeoutExpired:
                 raise AssertionError(f"CLI command timed out after 30 seconds for example: {example.name}")

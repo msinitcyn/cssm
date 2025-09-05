@@ -1,0 +1,18 @@
+{
+    "name": "AdminUserWithoutMFA",
+    "resource_type": "iam_user",
+    "user_name": "admin.user",
+    "access_keys": [
+        {
+            "access_key_id": "AKIA2345678901234567",
+            "status": "Active",
+            "create_date": "2024-01-10T10:30:00Z",
+            "last_used": "2024-11-30T16:45:00Z"
+        }
+    ],
+    "password_last_used": "2024-11-30T09:15:00Z",
+    "mfa_enabled": false,
+    "attached_policies": [
+        "arn:aws:iam::aws:policy/AdministratorAccess"
+    ]
+}
