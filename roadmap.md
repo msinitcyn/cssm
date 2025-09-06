@@ -34,13 +34,13 @@
 [ ] Rule-based risk evaluation for S3<br>
 
 ## Milestone 7: Validation & Test Coverage
-[ ] Create comprehensive test case suite:<br>
+[x] Create comprehensive test case suite:<br>
     - IAM: wildcard policies, broad assume role permissions, missing conditions<br>
     - S3: public buckets, dangerous CORS configs, website hosting enabled<br>
-[ ] Test against known security incidents (Capital One breach, etc.)<br>
+[x] Test against known security incidents (Capital One breach, etc.)<br>
 [ ] False positive detection - verify good configs are NOT flagged<br>
-[ ] Document test results and detection accuracy metrics<br>
-[ ] Create test runner with pass/fail reporting<br>
+[x] Document test results and detection accuracy metrics<br>
+[x] Create test runner with pass/fail reporting<br>
 [ ] Generate HTML reports for each example in CI build for demo purposes<br>
 
 ## Milestone 8: IDE and GitHub integration
