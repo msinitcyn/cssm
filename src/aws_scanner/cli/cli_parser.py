@@ -31,6 +31,7 @@ def get_args():
     elif args.command == "sg":
         sg_parser = argparse.ArgumentParser(description="Scan Security Groups")
         sg_parser.add_argument("--regions", type=str, help="Comma-separated list of AWS regions")
+        sg_parser.add_argument("--file", type=Path, help="Path to local Security Group configuration JSON file")
         sg_args = sg_parser.parse_args(remaining)
         return argparse.Namespace(**vars(args), **vars(sg_args))
 

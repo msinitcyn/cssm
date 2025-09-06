@@ -57,5 +57,38 @@
       "S3_NO_ENCRYPTION",
       "S3_MFA_DELETE_DISABLED"
     ]
+  },
+  {
+    "service": "sg",
+    "entity_type": "",
+    "name": "open_security_group",
+    "vulnerabilities": [
+      "SG_OPEN_MANAGEMENT_PORT"
+    ]
+  },
+  {
+    "service": "sg",
+    "entity_type": "",
+    "name": "ssh_open_to_world",
+    "vulnerabilities": [
+      "SG_OPEN_MANAGEMENT_PORT",
+      "SG_OPEN_PORT"
+    ]
+  },
+  {
+    "service": "sg",
+    "entity_type": "",
+    "name": "database_exposed",
+    "vulnerabilities": [
+      "SG_OPEN_DATABASE_PORT"
+    ]
+  },
+  {
+    "service": "sg",
+    "entity_type": "",
+    "name": "all_ports_open",
+    "vulnerabilities": [
+      "SG_ALL_PORTS_OPEN_PUBLIC"
+    ]
   }
 ]

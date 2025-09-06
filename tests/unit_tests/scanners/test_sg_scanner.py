@@ -6,8 +6,22 @@ from aws_scanner.core.configs import SgConfig
 from aws_scanner.core.boto3_wrapper import Boto3Wrapper
 
 
+def test_get_collector_file():
+    mock_config = MagicMock()
+    mock_config.file = "test_file.json"
+    mock_config.regions = ["us-east-1"]
+    mock_boto3_wrapper = MagicMock()
+
+    with patch("aws_scanner.scanners.sg_scanner.FileSgCollector") as mock_file_collector:
+        from aws_scanner.scanners.sg_scanner import get_collector
+        get_collector(mock_config, mock_boto3_wrapper)
+
+        mock_file_collector.assert_called_once_with("test_file.json")
+
+
 def test_get_collector_aws():
     mock_config = MagicMock()
+    mock_config.file = None
     mock_config.regions = ["us-east-1"]
     mock_boto3_wrapper = MagicMock()
 
@@ -99,7 +113,7 @@ def test_run_scanner_no_credentials():
     with patch("aws_scanner.scanners.sg_scanner.get_collector", return_value=mock_collector), \
          patch("logging.critical") as mock_critical, \
          patch("sys.exit", side_effect=SystemExit(1)) as mock_exit:
-        
+
         from aws_scanner.scanners.sg_scanner import run_scanner
         try:
             run_scanner(mock_config, mock_boto3_wrapper)

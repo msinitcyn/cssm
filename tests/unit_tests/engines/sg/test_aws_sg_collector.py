@@ -107,7 +107,7 @@ def test_collect_missing_optional_fields():
     assert results[0].group_id == "sg-minimal"
     assert results[0].group_name == ""
     assert results[0].owner_id == ""
-    assert results[0].ingress_permissions == []
+    assert results[0].ingress_rules == []
 
 def test_collect_region_exception():
     mock_sg_data = {
@@ -255,7 +255,7 @@ def test_collect_none_values_in_response():
     assert results[0].group_id == "sg-with-nones"
     assert results[0].group_name == ""
     assert results[0].owner_id == ""
-    assert results[0].ingress_permissions == []
+    assert results[0].ingress_rules == []
 
 def test_collect_malformed_security_group():
     mock_sg_data = {
@@ -321,4 +321,4 @@ def test_collect_complex_permissions():
     results = collector.collect()
 
     assert len(results) == 1
-    assert results[0].ingress_permissions == complex_permissions
+    assert results[0].ingress_rules == complex_permissions

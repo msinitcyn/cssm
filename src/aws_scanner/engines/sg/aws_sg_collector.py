@@ -36,7 +36,7 @@ class AwsSgCollector(SgCollector):
                         group_id=group["GroupId"],
                         group_name=group.get("GroupName", ""),
                         owner_id=group.get("OwnerId", ""),
-                        ingress_permissions=group.get("IpPermissions", []),
+                        ingress_rules=group.get("IpPermissions", []),
                         region=region
                     ))
                 except KeyError:

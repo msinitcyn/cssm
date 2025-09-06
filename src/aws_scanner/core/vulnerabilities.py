@@ -199,6 +199,27 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         entity_type="security_group",
         remediation="Restrict access by CIDR and port range"
     ),
+    "SG_OPEN_MANAGEMENT_PORT": VulnerabilityTemplate(
+        id="SG_OPEN_MANAGEMENT_PORT",
+        description="Security Group allows access to management ports (SSH/RDP) from the internet - high risk for brute force attacks",
+        severity="high",
+        entity_type="security_group",
+        remediation="Restrict SSH (22) and RDP (3389) access to specific IP ranges or use bastion hosts"
+    ),
+    "SG_OPEN_DATABASE_PORT": VulnerabilityTemplate(
+        id="SG_OPEN_DATABASE_PORT", 
+        description="Security Group allows direct database access from the internet - databases should not be publicly accessible",
+        severity="critical",
+        entity_type="security_group",
+        remediation="Move databases to private subnets and restrict access through application tiers only"
+    ),
+    "SG_ALL_PORTS_OPEN_PUBLIC": VulnerabilityTemplate(
+        id="SG_ALL_PORTS_OPEN_PUBLIC",
+        description="Security Group allows all ports (0-65535) or all protocols from the internet - extremely dangerous configuration",
+        severity="critical",
+        entity_type="security_group",
+        remediation="Implement principle of least privilege - only open required ports to specific sources"
+    ),
     "CROSS_ACCOUNT_SG_REFERENCE": VulnerabilityTemplate(
         id="CROSS_ACCOUNT_SG_REFERENCE",
         description="Ingress rule references a group from another AWS account",

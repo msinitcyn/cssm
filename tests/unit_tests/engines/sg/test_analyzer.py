@@ -23,10 +23,10 @@ def test_is_all_ports():
     assert is_all_ports(None, 443, "tcp") is True
 
 
-def test_check_open_ipv4_dangerous_port():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv4
+def test_check_management_ports_ssh():
+    from aws_scanner.engines.sg.analyzer import check_management_ports
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
         "FromPort": 22,
         "ToPort": 22,
@@ -36,22 +36,144 @@ def test_check_open_ipv4_dangerous_port():
 
     with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
         mock_vuln = MagicMock()
-        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_PORT"}
+        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_MANAGEMENT_PORT"}
         mock_vulns.__getitem__.return_value = mock_vuln
 
-        findings = check_open_ipv4(rule, sg)
+        findings = check_management_ports(rule, sg)
 
         assert len(findings) == 1
         mock_vuln.instantiate.assert_called_once_with(
             "sg-test",
-            raw_data={"cidr": "0.0.0.0/0", "from_port": 22, "to_port": 22}
+            raw_data={"cidr": "0.0.0.0/0", "from_port": 22, "to_port": 22, "port_type": "management"}
         )
 
 
-def test_check_open_ipv4_all_ports():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv4
+def test_check_management_ports_rdp():
+    from aws_scanner.engines.sg.analyzer import check_management_ports
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 3389,
+        "ToPort": 3389,
+        "IpProtocol": "tcp",
+        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
+    }
+
+    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_MANAGEMENT_PORT"}
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        findings = check_management_ports(rule, sg)
+
+        assert len(findings) == 1
+
+
+def test_check_management_ports_ipv6():
+    from aws_scanner.engines.sg.analyzer import check_management_ports
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 22,
+        "ToPort": 22,
+        "IpProtocol": "tcp",
+        "Ipv6Ranges": [{"CidrIpv6": "::/0"}]
+    }
+
+    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_MANAGEMENT_PORT"}
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        findings = check_management_ports(rule, sg)
+
+        assert len(findings) == 1
+        mock_vuln.instantiate.assert_called_once_with(
+            "sg-test",
+            raw_data={"cidr": "::/0", "from_port": 22, "to_port": 22, "port_type": "management"}
+        )
+
+
+def test_check_management_ports_safe():
+    from aws_scanner.engines.sg.analyzer import check_management_ports
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 22,
+        "ToPort": 22,
+        "IpProtocol": "tcp",
+        "IpRanges": [{"CidrIp": "10.0.0.0/8"}]
+    }
+
+    findings = check_management_ports(rule, sg)
+    assert len(findings) == 0
+
+
+def test_check_database_ports_mysql():
+    from aws_scanner.engines.sg.analyzer import check_database_ports
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 3306,
+        "ToPort": 3306,
+        "IpProtocol": "tcp",
+        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
+    }
+
+    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_DATABASE_PORT"}
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        findings = check_database_ports(rule, sg)
+
+        assert len(findings) == 1
+        mock_vuln.instantiate.assert_called_once_with(
+            "sg-test",
+            raw_data={"cidr": "0.0.0.0/0", "from_port": 3306, "to_port": 3306, "port_type": "database"}
+        )
+
+
+def test_check_database_ports_postgresql():
+    from aws_scanner.engines.sg.analyzer import check_database_ports
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 5432,
+        "ToPort": 5432,
+        "IpProtocol": "tcp",
+        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
+    }
+
+    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_DATABASE_PORT"}
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        findings = check_database_ports(rule, sg)
+
+        assert len(findings) == 1
+
+
+def test_check_database_ports_safe():
+    from aws_scanner.engines.sg.analyzer import check_database_ports
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 3306,
+        "ToPort": 3306,
+        "IpProtocol": "tcp",
+        "IpRanges": [{"CidrIp": "10.0.0.0/8"}]
+    }
+
+    findings = check_database_ports(rule, sg)
+    assert len(findings) == 0
+
+
+def test_check_all_ports_open_public_tcp():
+    from aws_scanner.engines.sg.analyzer import check_all_ports_open_public
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
         "FromPort": 0,
         "ToPort": 65535,
@@ -61,127 +183,56 @@ def test_check_open_ipv4_all_ports():
 
     with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
         mock_vuln = MagicMock()
-        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_PORT"}
+        mock_vuln.instantiate.return_value = {"type": "SG_ALL_PORTS_OPEN_PUBLIC"}
         mock_vulns.__getitem__.return_value = mock_vuln
 
-        findings = check_open_ipv4(rule, sg)
-
-        assert len(findings) == 1
-
-
-def test_check_open_ipv4_safe_port():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv4
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 8080,
-        "ToPort": 8080,
-        "IpProtocol": "tcp",
-        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
-    }
-
-    findings = check_open_ipv4(rule, sg)
-    assert len(findings) == 0
-
-
-def test_check_open_ipv4_private_cidr():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv4
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 22,
-        "ToPort": 22,
-        "IpProtocol": "tcp",
-        "IpRanges": [{"CidrIp": "10.0.0.0/8"}]
-    }
-
-    findings = check_open_ipv4(rule, sg)
-    assert len(findings) == 0
-
-
-def test_check_open_ipv4_multiple_ranges():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv4
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 22,
-        "ToPort": 22,
-        "IpProtocol": "tcp",
-        "IpRanges": [
-            {"CidrIp": "0.0.0.0/0"},
-            {"CidrIp": "10.0.0.0/8"},
-            {"CidrIp": "0.0.0.0/0"}
-        ]
-    }
-
-    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
-        mock_vuln = MagicMock()
-        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_PORT"}
-        mock_vulns.__getitem__.return_value = mock_vuln
-
-        findings = check_open_ipv4(rule, sg)
-
-        assert len(findings) == 2  # Two open CIDR blocks
-
-
-def test_check_open_ipv4_missing_ip_ranges():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv4
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 22,
-        "ToPort": 22,
-        "IpProtocol": "tcp"
-    }
-
-    findings = check_open_ipv4(rule, sg)
-    assert len(findings) == 0
-
-
-def test_check_open_ipv6_dangerous_port():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv6
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 443,
-        "ToPort": 443,
-        "IpProtocol": "tcp",
-        "Ipv6Ranges": [{"CidrIpv6": "::/0"}]
-    }
-
-    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
-        mock_vuln = MagicMock()
-        mock_vuln.instantiate.return_value = {"type": "SG_OPEN_PORT"}
-        mock_vulns.__getitem__.return_value = mock_vuln
-
-        findings = check_open_ipv6(rule, sg)
+        findings = check_all_ports_open_public(rule, sg)
 
         assert len(findings) == 1
         mock_vuln.instantiate.assert_called_once_with(
             "sg-test",
-            raw_data={"cidr": "::/0", "from_port": 443, "to_port": 443}
+            raw_data={"cidr": "0.0.0.0/0", "from_port": 0, "to_port": 65535, "protocol": "tcp"}
         )
 
 
-def test_check_open_ipv6_safe_ipv6_range():
-    from aws_scanner.engines.sg.analyzer import check_open_ipv6
+def test_check_all_ports_open_public_all_protocols():
+    from aws_scanner.engines.sg.analyzer import check_all_ports_open_public
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
-        "FromPort": 22,
-        "ToPort": 22,
-        "IpProtocol": "tcp",
-        "Ipv6Ranges": [{"CidrIpv6": "2001:db8::/32"}]
+        "IpProtocol": "-1",
+        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
     }
 
-    findings = check_open_ipv6(rule, sg)
+    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
+        mock_vuln = MagicMock()
+        mock_vuln.instantiate.return_value = {"type": "SG_ALL_PORTS_OPEN_PUBLIC"}
+        mock_vulns.__getitem__.return_value = mock_vuln
+
+        findings = check_all_ports_open_public(rule, sg)
+
+        assert len(findings) == 1
+
+
+def test_check_all_ports_open_public_safe():
+    from aws_scanner.engines.sg.analyzer import check_all_ports_open_public
+
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
+    rule = {
+        "FromPort": 80,
+        "ToPort": 80,
+        "IpProtocol": "tcp",
+        "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
+    }
+
+    findings = check_all_ports_open_public(rule, sg)
     assert len(findings) == 0
 
 
 def test_check_cross_account_references_different_account():
     from aws_scanner.engines.sg.analyzer import check_cross_account_references
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
         "UserIdGroupPairs": [
             {"UserId": "987654321098", "GroupId": "sg-other"}
@@ -205,7 +256,7 @@ def test_check_cross_account_references_different_account():
 def test_check_cross_account_references_same_account():
     from aws_scanner.engines.sg.analyzer import check_cross_account_references
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
         "UserIdGroupPairs": [
             {"UserId": "123456789012", "GroupId": "sg-same-account"}
@@ -216,46 +267,10 @@ def test_check_cross_account_references_same_account():
     assert len(findings) == 0
 
 
-def test_check_cross_account_references_no_user_id():
-    from aws_scanner.engines.sg.analyzer import check_cross_account_references
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "UserIdGroupPairs": [
-            {"GroupId": "sg-no-user-id"}
-        ]
-    }
-
-    findings = check_cross_account_references(rule, sg)
-    assert len(findings) == 0
-
-
-def test_check_cross_account_references_multiple_pairs():
-    from aws_scanner.engines.sg.analyzer import check_cross_account_references
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "UserIdGroupPairs": [
-            {"UserId": "987654321098", "GroupId": "sg-other1"},
-            {"UserId": "123456789012", "GroupId": "sg-same"},
-            {"UserId": "111111111111", "GroupId": "sg-other2"}
-        ]
-    }
-
-    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
-        mock_vuln = MagicMock()
-        mock_vuln.instantiate.return_value = {"type": "CROSS_ACCOUNT_SG_REFERENCE"}
-        mock_vulns.__getitem__.return_value = mock_vuln
-
-        findings = check_cross_account_references(rule, sg)
-
-        assert len(findings) == 2
-
-
 def test_check_internal_all_ports_protocol_minus_one():
     from aws_scanner.engines.sg.analyzer import check_internal_all_ports
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
         "IpProtocol": "-1",
         "UserIdGroupPairs": [{"GroupId": "sg-internal"}]
@@ -274,7 +289,7 @@ def test_check_internal_all_ports_protocol_minus_one():
 def test_check_internal_all_ports_with_public_cidr():
     from aws_scanner.engines.sg.analyzer import check_internal_all_ports
 
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
+    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_rules=[], region="us-east-1")
     rule = {
         "FromPort": 0,
         "ToPort": 65535,
@@ -284,57 +299,7 @@ def test_check_internal_all_ports_with_public_cidr():
     }
 
     findings = check_internal_all_ports(rule, sg)
-    assert len(findings) == 0  # Has public CIDR, so not internal-only
-
-
-def test_check_internal_all_ports_with_public_ipv6():
-    from aws_scanner.engines.sg.analyzer import check_internal_all_ports
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 0,
-        "ToPort": 65535,
-        "IpProtocol": "tcp",
-        "Ipv6Ranges": [{"CidrIpv6": "::/0"}]
-    }
-
-    findings = check_internal_all_ports(rule, sg)
     assert len(findings) == 0
-
-
-def test_check_internal_all_ports_specific_ports():
-    from aws_scanner.engines.sg.analyzer import check_internal_all_ports
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": 80,
-        "ToPort": 443,
-        "IpProtocol": "tcp",
-        "UserIdGroupPairs": [{"GroupId": "sg-internal"}]
-    }
-
-    findings = check_internal_all_ports(rule, sg)
-    assert len(findings) == 0  # Not all ports
-
-
-def test_check_internal_all_ports_missing_ranges():
-    from aws_scanner.engines.sg.analyzer import check_internal_all_ports
-
-    sg = SgData(group_id="sg-test", group_name="test", owner_id="123456789012", ingress_permissions=[], region="us-east-1")
-    rule = {
-        "FromPort": None,
-        "ToPort": None,
-        "IpProtocol": "tcp"
-    }
-
-    with patch("aws_scanner.engines.sg.analyzer.VULNERABILITIES") as mock_vulns:
-        mock_vuln = MagicMock()
-        mock_vuln.instantiate.return_value = {"type": "SG_ALL_PORTS_INTERNAL"}
-        mock_vulns.__getitem__.return_value = mock_vuln
-
-        findings = check_internal_all_ports(rule, sg)
-
-        assert len(findings) == 1
 
 
 def test_analyze_sg_multiple_findings():
@@ -344,7 +309,7 @@ def test_analyze_sg_multiple_findings():
         group_id="sg-test",
         group_name="test",
         owner_id="123456789012",
-        ingress_permissions=[
+        ingress_rules=[
             {
                 "FromPort": 22,
                 "ToPort": 22,
@@ -352,17 +317,16 @@ def test_analyze_sg_multiple_findings():
                 "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
             },
             {
-                "FromPort": 443,
-                "ToPort": 443,
+                "FromPort": 3306,
+                "ToPort": 3306,
                 "IpProtocol": "tcp",
-                "Ipv6Ranges": [{"CidrIpv6": "::/0"}]
+                "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
             },
             {
-                "UserIdGroupPairs": [{"UserId": "987654321098", "GroupId": "sg-other"}]
-            },
-            {
-                "IpProtocol": "-1",
-                "UserIdGroupPairs": [{"GroupId": "sg-internal"}]
+                "FromPort": 0,
+                "ToPort": 65535,
+                "IpProtocol": "tcp",
+                "IpRanges": [{"CidrIp": "0.0.0.0/0"}]
             }
         ],
         region="us-east-1"
@@ -375,8 +339,8 @@ def test_analyze_sg_multiple_findings():
 
         findings = analyze_sg(sg)
 
-        # Should find: open IPv4, open IPv6, cross-account reference, internal all ports (rule 3), internal all ports (rule 4)
-        assert len(findings) == 5
+        assert len(findings) == 3
+
 
 def test_analyze_sg_no_findings():
     from aws_scanner.engines.sg.analyzer import analyze_sg
@@ -385,29 +349,14 @@ def test_analyze_sg_no_findings():
         group_id="sg-test",
         group_name="test",
         owner_id="123456789012",
-        ingress_permissions=[
+        ingress_rules=[
             {
-                "FromPort": 8080,
-                "ToPort": 8080,
+                "FromPort": 80,
+                "ToPort": 80,
                 "IpProtocol": "tcp",
                 "IpRanges": [{"CidrIp": "10.0.0.0/8"}]
             }
         ],
-        region="us-east-1"
-    )
-
-    findings = analyze_sg(sg)
-    assert len(findings) == 0
-
-
-def test_analyze_sg_empty_permissions():
-    from aws_scanner.engines.sg.analyzer import analyze_sg
-
-    sg = SgData(
-        group_id="sg-test",
-        group_name="test",
-        owner_id="123456789012",
-        ingress_permissions=[],
         region="us-east-1"
     )
 

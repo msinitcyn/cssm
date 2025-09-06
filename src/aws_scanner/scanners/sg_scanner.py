@@ -4,11 +4,14 @@ import botocore.exceptions
 
 from aws_scanner.core.configs import SgConfig
 from aws_scanner.engines.sg.aws_sg_collector import AwsSgCollector
+from aws_scanner.engines.sg.file_sg_collector import FileSgCollector
 from aws_scanner.engines.sg.analyzer import analyze_sg
 
 from aws_scanner.core.boto3_wrapper import Boto3Wrapper
 
 def get_collector(sg_config: SgConfig, boto3_wrapper: Boto3Wrapper):
+    if sg_config.file:
+        return FileSgCollector(sg_config.file)
     return AwsSgCollector(boto3_wrapper, sg_config.regions)
 
 def analyze_security_groups(items):

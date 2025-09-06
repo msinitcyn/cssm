@@ -1,0 +1,27 @@
+{
+    "name": "DatabaseExposed",
+    "resource_type": "ec2_security_group",
+    "group_id": "sg-87654321",
+    "group_name": "database-sg-exposed",
+    "owner_id": "123456789012",
+    "ingress_rules": [
+        {
+            "protocol": "tcp",
+            "from_port": 3306,
+            "to_port": 3306,
+            "cidr_blocks": [
+                "0.0.0.0/0"
+            ],
+            "description": "MySQL access from anywhere - CRITICAL"
+        },
+        {
+            "protocol": "tcp",
+            "from_port": 5432,
+            "to_port": 5432,
+            "cidr_blocks": [
+                "0.0.0.0/0"
+            ],
+            "description": "PostgreSQL access from anywhere - CRITICAL"
+        }
+    ]
+}

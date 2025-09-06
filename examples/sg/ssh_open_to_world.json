@@ -1,0 +1,27 @@
+{
+    "name": "SSHOpenToWorld",
+    "resource_type": "ec2_security_group",
+    "group_id": "sg-12345678",
+    "group_name": "web-servers-ssh-open",
+    "owner_id": "123456789012",
+    "ingress_rules": [
+        {
+            "protocol": "tcp",
+            "from_port": 22,
+            "to_port": 22,
+            "cidr_blocks": [
+                "0.0.0.0/0"
+            ],
+            "description": "SSH access from anywhere - DANGEROUS"
+        },
+        {
+            "protocol": "tcp", 
+            "from_port": 80,
+            "to_port": 80,
+            "cidr_blocks": [
+                "0.0.0.0/0"
+            ],
+            "description": "HTTP access"
+        }
+    ]
+}

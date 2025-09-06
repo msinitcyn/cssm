@@ -56,6 +56,13 @@ def run_scanner(example: Example):
             "s3",
             "--file", example.get_path()
         ]
+    elif example.service == "sg" and example.entity_type == "":
+        cmd = [
+            sys.executable, "-m", "aws_scanner.cli.main",
+            "--output", example.get_output_path(),
+            "sg",
+            "--file", example.get_path()
+        ]
     else:
         raise ValueError(f"Unsupported example configuration: service={example.service}, entity_type={example.entity_type}")
 
@@ -87,6 +94,8 @@ def validate_results(example: Example, scanner_output):
         result_key = 'iam_policies'
     elif example.service == "s3" and example.entity_type == "":
         result_key = 's3_buckets'
+    elif example.service == "sg" and example.entity_type == "":
+        result_key = 'security_groups'
     else:
         raise ValueError(f"Unknown result key for service={example.service}, entity_type={example.entity_type}")
 
