@@ -44,7 +44,7 @@
 [ ] Generate HTML reports for each example in CI build for demo purposes<br>
 
 ## Milestone 8: IDE and GitHub integration
-[ ] VSCode extension with inline highlights for risky configurations<br>
+[ ] VSCode extension (MVP)<br>
 [ ] GitHub Bot for PR comments on risky policies<br>
 [ ] Integration with popular file types (Terraform .tf files, CloudFormation .yaml)<br>
 
@@ -123,7 +123,7 @@ Combine ACL + policy + CORS + website flags to assign a single risk label. Examp
 Create comprehensive test suites to validate detection accuracy and reduce false positives. Include real-world incident test cases.
 
 ### VSCode extension
-Highlight dangerous IAM actions, wildcard resources, or insecure SG blocks inline in code editor during development.
+Create a simple VSCode extension that allows users to run security scans on the currently open file using command palette commands.
 
 ### GitHub Bot for PR comments
 Automatically post inline comments on PRs that introduce insecure IAM policies or SG rules. Based on scanning changed files.

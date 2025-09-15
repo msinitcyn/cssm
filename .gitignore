@@ -25,3 +25,9 @@ input/
 .qodo
 
 .env
+
+aws_scanner_cli.py
+vscode-extension/bin/
+dist/
+build/
+*.spec

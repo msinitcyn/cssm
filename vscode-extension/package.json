@@ -1,0 +1,59 @@
+{
+  "name": "aws-scanner",
+  "displayName": "AWS Security Scanner",
+  "description": "Scan AWS configurations for security misconfigurations",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.74.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [],
+  "main": "./out/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "aws-scanner.scanIamRole",
+        "title": "AWS Scanner: Scan IAM Role"
+      },
+      {
+        "command": "aws-scanner.scanIamPolicy",
+        "title": "AWS Scanner: Scan IAM Policy"
+      },
+      {
+        "command": "aws-scanner.scanS3",
+        "title": "AWS Scanner: Scan S3 Configuration"
+      },
+      {
+        "command": "aws-scanner.scanSecurityGroup",
+        "title": "AWS Scanner: Scan Security Group"
+      }
+    ],
+    "configuration": {
+      "title": "AWS Scanner",
+      "properties": {
+        "aws-scanner.cliPath": {
+          "type": "string",
+          "default": "aws-scanner",
+          "description": "Path to aws-scanner CLI executable"
+        },
+        "aws-scanner.autoSave": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically save file before scanning"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "npm run compile",
+    "compile": "tsc -p ./",
+    "watch": "tsc -watch -p ./"
+  },
+  "devDependencies": {
+    "@types/vscode": "^1.74.0",
+    "@types/node": "16.x",
+    "typescript": "^4.9.4"
+  }
+}
