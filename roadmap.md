@@ -44,9 +44,29 @@
 [ ] Generate HTML reports for each example in CI build for demo purposes<br>
 
 ## Milestone 8: IDE and GitHub integration
-[ ] VSCode extension (MVP)<br>
+[x] VSCode extension (MVP)<br>
 [ ] GitHub Bot for PR comments on risky policies<br>
 [ ] Integration with popular file types (Terraform .tf files, CloudFormation .yaml)<br>
+
+## Milestone 9: High Impact Foundation
+[ ] CloudFormation support (Scanner)<br>
+[ ] Release pipeline automation (Extension)<br>
+[ ] Auto-detect configuration type (Extension)<br>
+
+## Milestone 10: Platform & Scale
+[ ] Multi-platform support (Windows/macOS) (Extension)<br>
+[ ] More vulnerability types (Scanner)<br>
+[ ] Documentation & examples (Both)<br>
+
+## Milestone 11: Advanced Features
+[ ] Extract boto/make AWS analyzers pluggable (Scanner)<br>
+[ ] Configuration graph analysis (Scanner)<br>
+[ ] Extension testing & reliability (Extension)<br>
+
+## Milestone 12: Polish & Optimization
+[ ] Real-time change detection (Extension)<br>
+[ ] Further size optimization (Extension)<br>
+[ ] Performance optimization (Scanner)<br>
 
 ---
 
@@ -127,3 +147,39 @@ Create a simple VSCode extension that allows users to run security scans on the 
 
 ### GitHub Bot for PR comments
 Automatically post inline comments on PRs that introduce insecure IAM policies or SG rules. Based on scanning changed files.
+
+### CloudFormation support
+Parse and analyze CloudFormation templates (YAML/JSON) for security misconfigurations in AWS resource definitions.
+
+### Release pipeline automation
+Set up automated build and publishing pipeline for the VSCode extension using GitHub Actions and marketplace integration.
+
+### Auto-detect configuration type
+Automatically detect configuration file type based on file extension and content instead of requiring manual selection.
+
+### Multi-platform support (Windows/macOS)
+Cross-compile scanner binary and package extension for Windows and macOS platforms in addition to Linux.
+
+### More vulnerability types
+Extend scanner to detect additional security issues like encryption settings, logging configurations, and access patterns.
+
+### Documentation & examples
+Create comprehensive user documentation, API references, troubleshooting guides, and real-world usage examples.
+
+### Extract boto/make AWS analyzers pluggable
+Refactor scanner architecture to make AWS service analyzers modular and reduce core dependencies like boto3.
+
+### Configuration graph analysis
+Implement graph-based analysis to detect security issues that arise from relationships between multiple AWS resources.
+
+### Extension testing & reliability
+Add comprehensive test suite for VSCode extension including unit tests, integration tests, and error handling improvements.
+
+### Real-time change detection
+Monitor file changes and automatically re-scan configurations when files are modified in the editor.
+
+### Further size optimization
+Reduce extension download and installation size through code splitting, tree shaking, and dependency optimization.
+
+### Performance optimization
+Improve scanner performance through caching, incremental analysis, and algorithmic optimizations for large configurations.
