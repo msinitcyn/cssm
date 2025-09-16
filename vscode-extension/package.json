@@ -1,14 +1,21 @@
 {
-  "name": "aws-scanner",
-  "displayName": "AWS Security Scanner",
+  "name": "aws-cssm",
+  "displayName": "AWS Cloud Security Scanner for Misconfigurations",
   "description": "Scan AWS configurations for security misconfigurations",
   "version": "0.1.0",
+  "publisher": "msin",
+  "repository": {
+    "type": "git", 
+    "url": "https://github.com/msinitcyn/cssm"
+  },
+  "license": "MIT",
+  "icon": "icon.png",
+  "categories": ["Linters", "Other", "Testing"],
+  "keywords": ["aws", "security", "iam", "s3", "scanner", "misconfiguration"],
+  "homepage": "https://github.com/msinitcyn/cssm/blob/master/README.md",
   "engines": {
     "vscode": "^1.74.0"
   },
-  "categories": [
-    "Other"
-  ],
   "activationEvents": [],
   "main": "./out/extension.js",
   "contributes": {

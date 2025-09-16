@@ -1,11 +1,11 @@
-# AWS Scanner VSCode Extension
+# AWS Cloud Security Scanner for Misconfigurations (CSSM) VSCode Extension
 
 A Visual Studio Code extension for scanning AWS configurations for security misconfigurations.
 
 ## Features
 
 - Scan IAM roles and policies
-- Scan S3 bucket configurations  
+- Scan S3 bucket configurations
 - Scan Security Group configurations
 - Display results with severity levels and remediation suggestions
 
@@ -15,11 +15,6 @@ A Visual Studio Code extension for scanning AWS configurations for security misc
 - `AWS Scanner: Scan IAM Policy` - Scan current file as IAM policy
 - `AWS Scanner: Scan S3 Configuration` - Scan current file as S3 config
 - `AWS Scanner: Scan Security Group` - Scan current file as Security Group
-
-## Requirements
-
-- AWS Scanner CLI must be installed and available in PATH
-- Install with: `pip install -e .` from the main project directory
 
 ## Settings
 
@@ -42,3 +37,7 @@ npm run compile
 ```
 
 Press F5 to launch extension development host.
+
+## License
+
+MIT License - see [LICENSE](LICENSE) file for details.
