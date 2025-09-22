@@ -43,10 +43,8 @@
 [x] Create test runner with pass/fail reporting<br>
 [ ] Generate HTML reports for each example in CI build for demo purposes<br>
 
-## Milestone 8: IDE and GitHub integration
+## Milestone 8: VSCode integration
 [x] VSCode extension (MVP)<br>
-[ ] GitHub Bot for PR comments on risky policies<br>
-[ ] Integration with popular file types (Terraform .tf files, CloudFormation .yaml)<br>
 
 ## Milestone 9: High Impact Foundation
 [ ] CloudFormation support (Scanner)<br>
@@ -67,6 +65,9 @@
 [ ] Real-time change detection (Extension)<br>
 [ ] Further size optimization (Extension)<br>
 [ ] Performance optimization (Scanner)<br>
+
+## Milestone 13: GitHub integration
+[ ] GitHub Bot for PR comments on risky policies<br>
 
 ---
 
