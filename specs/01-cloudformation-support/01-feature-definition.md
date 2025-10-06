@@ -28,7 +28,7 @@ cssm --cloudformation dir:templates/ --output report.json
 ## Implementation Steps
 
 ### Phase 1: Integration Tests
-[ ] Create example CloudFormation template with vulnerabilities
+[x] Create example CloudFormation template with vulnerabilities
   - Template with IAM role (wildcard permissions)
   - Template with S3 bucket (public policy)
   - Template with Security Group (open ports)

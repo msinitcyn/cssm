@@ -1,0 +1,94 @@
+AWSTemplateFormatVersion: '2010-09-09'
+Description: 'CloudFormation template with intentional security vulnerabilities for CSSM testing'
+
+Resources:
+  # IAM Role with wildcard permissions vulnerability
+  VulnerableIAMRole:
+    Type: AWS::IAM::Role
+    Properties:
+      RoleName: VulnerableAdminRole
+      AssumeRolePolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: ec2.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: WildcardPolicy
+          PolicyDocument:
+            Version: '2012-10-17'
+            Statement:
+              - Effect: Allow
+                Action: '*'
+                Resource: '*'
+
+  # S3 Bucket with public access vulnerability
+  VulnerableS3Bucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: cssm-test-vulnerable-bucket
+      PublicAccessBlockConfiguration:
+        BlockPublicAcls: false
+        BlockPublicPolicy: false
+        IgnorePublicAcls: false
+        RestrictPublicBuckets: false
+
+  # S3 Bucket Policy allowing public read access
+  VulnerableS3BucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref VulnerableS3Bucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: !Sub '${VulnerableS3Bucket.Arn}/*'
+
+  # Security Group with open ports vulnerability
+  VulnerableSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupName: VulnerableSecurityGroup
+      GroupDescription: Security group with overly permissive rules
+      VpcId: vpc-12345678  # Placeholder VPC ID
+      SecurityGroupIngress:
+        # SSH open to the world
+        - IpProtocol: tcp
+          FromPort: 22
+          ToPort: 22
+          CidrIp: 0.0.0.0/0
+          Description: SSH access from anywhere
+        # RDP open to the world
+        - IpProtocol: tcp
+          FromPort: 3389
+          ToPort: 3389
+          CidrIp: 0.0.0.0/0
+          Description: RDP access from anywhere
+        # All ports open to the world
+        - IpProtocol: tcp
+          FromPort: 0
+          ToPort: 65535
+          CidrIp: 0.0.0.0/0
+          Description: All TCP ports open
+        # IPv6 open access
+        - IpProtocol: tcp
+          FromPort: 443
+          ToPort: 443
+          CidrIpv6: ::/0
+          Description: HTTPS from anywhere IPv6
+
+Outputs:
+  IAMRoleArn:
+    Description: ARN of the vulnerable IAM role
+    Value: !GetAtt VulnerableIAMRole.Arn
+  
+  S3BucketName:
+    Description: Name of the vulnerable S3 bucket
+    Value: !Ref VulnerableS3Bucket
+  
+  SecurityGroupId:
+    Description: ID of the vulnerable security group
+    Value: !Ref VulnerableSecurityGroup
