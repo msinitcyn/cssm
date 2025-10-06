@@ -34,7 +34,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Template with Security Group (open ports)
   - Place in `examples/cloudformation/vulnerable_stack.yaml`
 
-[ ] Create integration test for CloudFormation scanning
+[x] Create integration test for CloudFormation scanning
   - Test file: `tests/integration_tests/test_cloudformation_scanning.py`
   - Scan example template with `--cloudformation` flag
   - Verify IAM vulnerability detected
