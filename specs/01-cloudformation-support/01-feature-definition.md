@@ -44,10 +44,9 @@ cssm --cloudformation dir:templates/ --output report.json
 
 ### Phase 2: CloudFormation Reader
 
-[ ] Research 3rd party CloudFormation parsers
+[x] Research 3rd party CloudFormation parsers
   - Evaluate options (cfn-lint, pycfmodel, troposphere, others)
   - Consider: parsing capability, maintenance, dependencies
-  - Document choice and reasoning
 
 [ ] Define internal CloudFormation data structure
   - Object to represent parsed CloudFormation template
