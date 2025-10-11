@@ -53,7 +53,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Must capture: Resources, resource types, properties
   - Keep it simple - only what we need for extraction
 
-[ ] Create unit tests for CloudFormation reader
+[x] Create unit tests for CloudFormation reader
   - Test parsing YAML template
   - Test parsing JSON template
   - Test extracting Resources section
