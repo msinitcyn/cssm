@@ -60,7 +60,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test identifying resource types (AWS::IAM::Role, AWS::S3::Bucket, etc.)
   - Tests will fail initially (TDD)
 
-[ ] Implement CloudFormation reader
+[x] Implement CloudFormation reader
   - Parse CloudFormation YAML/JSON
   - Extract Resources section
   - Return internal data structure
