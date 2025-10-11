@@ -48,7 +48,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Evaluate options (cfn-lint, pycfmodel, troposphere, others)
   - Consider: parsing capability, maintenance, dependencies
 
-[ ] Define internal CloudFormation data structure
+[x] Define internal CloudFormation data structure
   - Object to represent parsed CloudFormation template
   - Must capture: Resources, resource types, properties
   - Keep it simple - only what we need for extraction
