@@ -78,7 +78,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test attached policies become separate ResourceDefinitions with references
   - Test can retrieve role and policies from collection
 
-[ ] Implement ResourceFileIamRoleCollector
+[x] Implement ResourceFileIamRoleCollector
   - New file: `src/aws_scanner/engines/iam_role/resource_file_iam_role_collector.py`
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for IAM role with properties
@@ -88,16 +88,16 @@ cssm --cloudformation dir:templates/ --output report.json
   - Add all resources to collection
 
 [ ] Write unit tests for ResourceFileS3Collector
-  - Test file: `tests/unit_tests/engines/s3/test_resource_file_s3_collector.py`
+  - Test file: tests/unit_tests/engines/s3/test_resource_file_s3_collector.py
   - Test collector returns ResourceCollection instead of List[S3BucketData]
   - Test S3 bucket becomes ResourceDefinition with resource_type="AWS::S3::Bucket"
   - Test bucket properties (BucketName, PublicAccessBlockConfiguration, AclGrants, etc.)
   - Test bucket policy becomes separate ResourceDefinition if exists
   - Test ResourceReference from bucket to policy if policy exists
-  - Test can retrieve bucket and policy from collection
+  - Test can retrieve bucket and policy from collection using get_by_id()
 
 [ ] Implement ResourceFileS3Collector
-  - New file: `src/aws_scanner/engines/s3/resource_file_s3_collector.py`
+  - New file: src/aws_scanner/engines/s3/resource_file_s3_collector.py
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for S3 bucket with properties
   - If bucket policy exists, create separate ResourceDefinition for policy
@@ -105,14 +105,14 @@ cssm --cloudformation dir:templates/ --output report.json
   - Add all resources to collection
 
 [ ] Write unit tests for ResourceFileSgCollector
-  - Test file: `tests/unit_tests/engines/sg/test_resource_file_sg_collector.py`
+  - Test file: tests/unit_tests/engines/sg/test_resource_file_sg_collector.py
   - Test collector returns ResourceCollection instead of List[SgData]
   - Test security group becomes ResourceDefinition with resource_type="AWS::EC2::SecurityGroup"
   - Test SG properties (GroupId, GroupName, VpcId, IngressRules, EgressRules)
-  - Test can retrieve security group from collection
+  - Test can retrieve security group from collection using get_by_id()
 
 [ ] Implement ResourceFileSgCollector
-  - New file: `src/aws_scanner/engines/sg/resource_file_sg_collector.py`
+  - New file: src/aws_scanner/engines/sg/resource_file_sg_collector.py
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for security group with properties
   - Add resource to collection

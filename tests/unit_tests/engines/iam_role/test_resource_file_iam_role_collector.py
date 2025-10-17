@@ -203,17 +203,17 @@ def test_can_retrieve_role_and_policies_from_collection():
         collector = ResourceFileIamRoleCollector("test_file.json")
         collection = collector.collect()
 
-        role = collection.get_resource_by_logical_id("complex-role")
+        role = collection.get_by_id("complex-role")
         assert role is not None
         assert role.resource_type == "AWS::IAM::Role"
         assert len(role.references) == 2
 
-        inline_policy = collection.get_resource_by_logical_id("complex-role-inline-policy")
+        inline_policy = collection.get_by_id("complex-role-inline-policy")
         assert inline_policy is not None
         assert inline_policy.resource_type == "AWS::IAM::Policy"
         assert inline_policy.properties["PolicyDocument"] == inline_policy_doc
 
-        managed_policy = collection.get_resource_by_logical_id("complex-role-managed-policy")
+        managed_policy = collection.get_by_id("complex-role-managed-policy")
         assert managed_policy is not None
         assert managed_policy.resource_type == "AWS::IAM::ManagedPolicy"
         assert managed_policy.properties["ManagedPolicyName"] == "managed-policy"
