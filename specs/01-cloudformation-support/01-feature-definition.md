@@ -135,7 +135,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Add ResourceReference from bucket to policy if policy exists
   - Add all resources to collection
 
-[ ] Write unit tests for ResourceFileSgCollector
+[x] Write unit tests for ResourceFileSgCollector
   - Test file: tests/unit_tests/engines/sg/test_resource_file_sg_collector.py
   - Test collector returns ResourceCollection instead of List[SgData]
   - Test security group becomes ResourceDefinition with resource_type="AWS::EC2::SecurityGroup"
