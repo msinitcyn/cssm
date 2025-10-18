@@ -7,6 +7,37 @@
 
 ---
 
+## ⚠️ API Precision Guidelines
+
+**CRITICAL**: To avoid API mismatches between tests and implementations, follow these rules when writing or reading specs:
+
+### Writing Tests From Specs
+1. **Use EXACT method names** from specs - if spec says `get_by_id()`, don't use `get_resource()`
+2. **Copy class names exactly** - including case and full paths
+3. **Check existing code** - if spec references existing class, look at its actual API in the source file
+4. **Ask for clarification** - if method name is ambiguous, request spec update
+
+### Example of Good vs Bad Spec Writing
+❌ **Bad**: "Test can retrieve bucket from collection"  
+✅ **Good**: "Test can retrieve bucket using `collection.get_by_id(logical_id)` method"
+
+❌ **Bad**: "Returns a resource collection"  
+✅ **Good**: "Returns `ResourceCollection` (from `aws_scanner.engines.common.resource_definition`)"
+
+### API Reference Location
+
+**All core APIs are defined in**: `src/aws_scanner/engines/common/resource_definition.py`
+
+Key classes to reference:
+- `ResourceCollection` - Container for resources with methods: `add_resource()`, `get_by_id()`, `get_resources_by_type()`
+- `ResourceDefinition` - Represents a single resource (has `logical_id`, `resource_type`, `properties`, `references`)
+- `ResourceReference` - Represents a reference from one resource to another
+- `ReferenceType` - Enum for reference types (INLINE, REF, etc.)
+
+**Always check the source file for exact method signatures and field names before writing tests.**
+
+---
+
 ## Feature Description
 
 Enable CSSM to analyze AWS CloudFormation templates (YAML/JSON) for security misconfigurations.
@@ -76,7 +107,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test role properties in ResourceDefinition.properties (RoleName, AssumeRolePolicyDocument)
   - Test inline policies become separate ResourceDefinitions with references
   - Test attached policies become separate ResourceDefinitions with references
-  - Test can retrieve role and policies from collection
+  - Test can retrieve role and policies from collection using `collection.get_by_id()`
 
 [x] Implement ResourceFileIamRoleCollector
   - New file: `src/aws_scanner/engines/iam_role/resource_file_iam_role_collector.py`
@@ -94,7 +125,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test bucket properties (BucketName, PublicAccessBlockConfiguration, AclGrants, etc.)
   - Test bucket policy becomes separate ResourceDefinition if exists
   - Test ResourceReference from bucket to policy if policy exists
-  - Test can retrieve bucket and policy from collection using get_by_id()
+  - Test can retrieve bucket and policy from collection using `collection.get_by_id()`
 
 [x] Implement ResourceFileS3Collector
   - New file: src/aws_scanner/engines/s3/resource_file_s3_collector.py
@@ -109,7 +140,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test collector returns ResourceCollection instead of List[SgData]
   - Test security group becomes ResourceDefinition with resource_type="AWS::EC2::SecurityGroup"
   - Test SG properties (GroupId, GroupName, VpcId, IngressRules, EgressRules)
-  - Test can retrieve security group from collection using get_by_id()
+  - Test can retrieve security group from collection using `collection.get_by_id()`
 
 [ ] Implement ResourceFileSgCollector
   - New file: src/aws_scanner/engines/sg/resource_file_sg_collector.py
@@ -125,7 +156,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test handles dict format: {"policy-name": {"name": "...", "document": {...}}}
   - Test handles list format: [{"name": "...", "document": {...}}]
   - Test handles single policy format: {"name": "...", "document": {...}}
-  - Test can retrieve policy from collection using get_by_id()
+  - Test can retrieve policy from collection using `collection.get_by_id()`
 
 [ ] Implement ResourceFileIamPolicyCollector
   - New file: src/aws_scanner/engines/iam_policy/resource_file_iam_policy_collector.py
@@ -160,7 +191,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test accepts ResourceDefinition and ResourceCollection
   - Test extracts AssumeRolePolicyDocument and analyzes trust policy
   - Test finds referenced policies via resource_def.references
-  - Test retrieves policy ResourceDefinitions from collection
+  - Test retrieves policy ResourceDefinitions from collection using `collection.get_by_id()`
   - Test analyzes all referenced policies
   - Test aggregates findings from trust policy + all policies
   - Test returns same vulnerabilities as old analyzer
@@ -170,7 +201,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Create analyze_iam_role_from_resource(resource_def: ResourceDefinition, collection: ResourceCollection)
   - Extract and analyze AssumeRolePolicyDocument from properties
   - Iterate through resource_def.references
-  - Get policy ResourceDefinitions from collection
+  - Get policy ResourceDefinitions from collection using `collection.get_by_id()`
   - Analyze each policy using analyze_iam_policy_from_resource()
   - Aggregate all findings with proper context
   - Return findings
@@ -180,7 +211,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test analyze_s3_bucket_from_resource() function
   - Test accepts ResourceDefinition and ResourceCollection
   - Test extracts bucket configuration from properties
-  - Test finds referenced bucket policy via references if exists
+  - Test finds referenced bucket policy via resource_def.references if exists
   - Test analyzes bucket with and without policy
   - Test returns same vulnerabilities as old analyzer
 
@@ -189,7 +220,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Create analyze_s3_bucket_from_resource(resource_def: ResourceDefinition, collection: ResourceCollection)
   - Extract bucket properties (PublicAccessBlockConfiguration, AclGrants, etc.)
   - Find referenced policy via resource_def.references if exists
-  - Get policy ResourceDefinition from collection if referenced
+  - Get policy ResourceDefinition from collection using `collection.get_by_id()` if referenced
   - Call existing S3 analysis functions with extracted data
   - Return findings
 
@@ -270,9 +301,13 @@ cssm --cloudformation dir:templates/ --output report.json
   - All CloudFormation vulnerabilities should be detected
   - Test should pass
 
-Notes
+---
 
-Use TDD for each step: write test first, then implement
-Each checkbox is a separate commit
-Test checkboxes and implementation checkboxes are separate
-Maintain backward compatibility until Phase 6 cleanup
+## Notes
+
+- Use TDD for each step: write test first, then implement
+- Each checkbox is a separate commit
+- Test checkboxes and implementation checkboxes are separate
+- Maintain backward compatibility until Phase 6 cleanup
+- Always use exact method names from API Reference section above
+- When in doubt about API, check existing code in `src/aws_scanner/engines/common/resource_definition.py`
