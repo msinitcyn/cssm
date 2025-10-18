@@ -87,7 +87,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Add ResourceReferences from role to policies
   - Add all resources to collection
 
-[ ] Write unit tests for ResourceFileS3Collector
+[x] Write unit tests for ResourceFileS3Collector
   - Test file: tests/unit_tests/engines/s3/test_resource_file_s3_collector.py
   - Test collector returns ResourceCollection instead of List[S3BucketData]
   - Test S3 bucket becomes ResourceDefinition with resource_type="AWS::S3::Bucket"
