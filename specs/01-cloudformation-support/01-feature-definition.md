@@ -117,6 +117,26 @@ cssm --cloudformation dir:templates/ --output report.json
   - Create ResourceDefinition for security group with properties
   - Add resource to collection
 
+[ ] Write unit tests for ResourceFileIamPolicyCollector
+  - Test file: tests/unit_tests/engines/iam_policy/test_resource_file_iam_policy_collector.py
+  - Test collector returns ResourceCollection instead of List[IamPolicyData]
+  - Test IAM policy becomes ResourceDefinition with resource_type="AWS::IAM::Policy"
+  - Test policy properties (PolicyName, PolicyDocument) in ResourceDefinition.properties
+  - Test handles dict format: {"policy-name": {"name": "...", "document": {...}}}
+  - Test handles list format: [{"name": "...", "document": {...}}]
+  - Test handles single policy format: {"name": "...", "document": {...}}
+  - Test can retrieve policy from collection using get_by_id()
+
+[ ] Implement ResourceFileIamPolicyCollector
+  - New file: src/aws_scanner/engines/iam_policy/resource_file_iam_policy_collector.py
+  - Implement collect() returning ResourceCollection
+  - Create ResourceDefinition for each IAM policy with properties
+  - Support dict format (key becomes logical_id)
+  - Support list format (use policy name as logical_id)
+  - Support single policy format (use policy name as logical_id)
+  - Properties: {"PolicyName": name, "PolicyDocument": document}
+  - Add all policies to collection
+
 ### Phase 4: Create New Analyzers Using ResourceDefinition
 
 [ ] Write unit tests for IAM Policy analyzer using ResourceDefinition
