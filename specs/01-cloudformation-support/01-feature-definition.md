@@ -96,7 +96,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test ResourceReference from bucket to policy if policy exists
   - Test can retrieve bucket and policy from collection using get_by_id()
 
-[ ] Implement ResourceFileS3Collector
+[x] Implement ResourceFileS3Collector
   - New file: src/aws_scanner/engines/s3/resource_file_s3_collector.py
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for S3 bucket with properties
