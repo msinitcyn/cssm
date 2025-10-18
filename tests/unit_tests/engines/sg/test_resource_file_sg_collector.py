@@ -24,7 +24,7 @@ def test_collect_returns_resource_collection():
 
     with patch("builtins.open", mock_file):
         from aws_scanner.engines.sg.resource_file_sg_collector import ResourceFileSgCollector
-        from aws_scanner.engines.common.resource_collection import ResourceCollection
+        from aws_scanner.engines.common.resource_definition import ResourceCollection
 
         collector = ResourceFileSgCollector("/path/to/sg.json")
         result = collector.collect()
@@ -65,7 +65,8 @@ def test_security_group_becomes_resource_definition():
         result = collector.collect()
 
         assert len(result.resources) == 1
-        sg = result.resources[0]
+        sg = result.get_by_id("sg-12345678")
+        assert sg is not None
         assert sg.resource_type == "AWS::EC2::SecurityGroup"
 
 
@@ -107,7 +108,7 @@ def test_security_group_properties():
         collector = ResourceFileSgCollector("/path/to/sg.json")
         result = collector.collect()
 
-        sg = result.resources[0]
+        sg = result.get_by_id("sg-abcdef12")
         assert sg.properties["GroupId"] == "sg-abcdef12"
         assert sg.properties["GroupName"] == "web-servers"
         assert sg.properties["VpcId"] == "vpc-98765432"
@@ -203,7 +204,7 @@ def test_security_group_with_missing_vpc():
         collector = ResourceFileSgCollector("/path/to/sg.json")
         result = collector.collect()
 
-        sg = result.resources[0]
+        sg = result.get_by_id("sg-12345678")
         assert sg.properties["GroupId"] == "sg-12345678"
         assert sg.properties.get("VpcId") is None
 
@@ -226,7 +227,7 @@ def test_empty_ingress_and_egress_rules():
         collector = ResourceFileSgCollector("/path/to/sg.json")
         result = collector.collect()
 
-        sg = result.resources[0]
+        sg = result.get_by_id("sg-12345678")
         assert sg.properties["IngressRules"] == []
         assert sg.properties["EgressRules"] == []
 
@@ -256,6 +257,6 @@ def test_legacy_ingress_permissions_field():
         collector = ResourceFileSgCollector("/path/to/sg.json")
         result = collector.collect()
 
-        sg = result.resources[0]
+        sg = result.get_by_id("sg-12345678")
         assert len(sg.properties["IngressRules"]) == 1
         assert sg.properties["IngressRules"][0]["protocol"] == "tcp"

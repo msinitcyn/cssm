@@ -142,7 +142,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test SG properties (GroupId, GroupName, VpcId, IngressRules, EgressRules)
   - Test can retrieve security group from collection using `collection.get_by_id()`
 
-[ ] Implement ResourceFileSgCollector
+[x] Implement ResourceFileSgCollector
   - New file: src/aws_scanner/engines/sg/resource_file_sg_collector.py
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for security group with properties
