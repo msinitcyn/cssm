@@ -148,6 +148,19 @@ cssm --cloudformation dir:templates/ --output report.json
   - Create ResourceDefinition for security group with properties
   - Add resource to collection
 
+[ ] Fix ResourceFileS3Collector backward compatibility
+  - Support "acl" field as either string or array (matching FileS3Collector)
+  - Convert ACL strings to grant objects:
+    - "public-read" → READ grant to AllUsers
+    - "public-read-write" → READ and WRITE grants to AllUsers  
+    - "private" → Empty grants
+    - Unknown values → Empty grants
+  - Support field name aliases for PAB config: "public_access_block", "block_public_access", "pab_config"
+  - Validate against examples/s3/public_s3_bucket.json (uses "acl": "public-read")
+  - Ensures compatibility per supported-features.md §3.3 and §6.1
+  
+  REM: This task was added when the issue with broken backwards compatibility was found.
+
 [ ] Write unit tests for ResourceFileIamPolicyCollector
   - Test file: tests/unit_tests/engines/iam_policy/test_resource_file_iam_policy_collector.py
   - Test collector returns ResourceCollection instead of List[IamPolicyData]
