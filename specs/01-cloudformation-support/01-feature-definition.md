@@ -161,7 +161,7 @@ cssm --cloudformation dir:templates/ --output report.json
   
   REM: This task was added when the issue with broken backwards compatibility was found.
 
-[ ] Write unit tests for ResourceFileIamPolicyCollector
+[x] Write unit tests for ResourceFileIamPolicyCollector
   - Test file: tests/unit_tests/engines/iam_policy/test_resource_file_iam_policy_collector.py
   - Test collector returns ResourceCollection instead of List[IamPolicyData]
   - Test IAM policy becomes ResourceDefinition with resource_type="AWS::IAM::Policy"
