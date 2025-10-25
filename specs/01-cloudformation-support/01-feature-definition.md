@@ -166,20 +166,32 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test collector returns ResourceCollection instead of List[IamPolicyData]
   - Test IAM policy becomes ResourceDefinition with resource_type="AWS::IAM::Policy"
   - Test policy properties (PolicyName, PolicyDocument) in ResourceDefinition.properties
-  - Test handles dict format: {"policy-name": {"name": "...", "document": {...}}}
-  - Test handles list format: [{"name": "...", "document": {...}}]
-  - Test handles single policy format: {"name": "...", "document": {...}}
+  - **Backward Compatibility (per supported-features.md §3.1):**
+    - Test handles single policy format: `{"name": "...", "document": {...}}` (NO wrapper - see examples/iam/policies/wildcard_admin.json)
+    - Test handles dict format: `{"policy-key": {"name": "...", "document": {...}}}` (multiple policies with keys)
+    - Test handles list format: `[{"name": "...", "document": {...}}]` (array of policies)
+    - Test handles AWS CLI metadata format: `{"Policies": [{"PolicyName": "...", "Arn": "..."}]}` (no documents)
+    - Test handles policies with missing "document" field (should skip with warning)
+    - Test handles policies with missing "name" field (should use key/index as fallback)
   - Test can retrieve policy from collection using `collection.get_by_id()`
+  - Validate against examples/iam/policies/wildcard_admin.json, assume_role_wildcard.json, privilege_escalation.json
 
 [ ] Implement ResourceFileIamPolicyCollector
   - New file: src/aws_scanner/engines/iam_policy/resource_file_iam_policy_collector.py
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for each IAM policy with properties
-  - Support dict format (key becomes logical_id)
-  - Support list format (use policy name as logical_id)
-  - Support single policy format (use policy name as logical_id)
+  - **Backward Compatibility Requirements:**
+    - Support single policy format (direct object, no wrapper) - use policy name as logical_id
+    - Support dict format (key becomes logical_id)
+    - Support list format (use policy name as logical_id, or "policy-{index}" as fallback)
+    - Support AWS CLI format with "Policies" key (create empty document with warning)
+    - Skip policies without "document" field (log warning)
+    - Extract name from multiple field variants: "name", "Name", "PolicyName", "policy_name"
+    - Extract document from multiple field variants: "document", "Document", "PolicyDocument", "policy_document"
+    - Handle stringified JSON documents (parse them)
   - Properties: {"PolicyName": name, "PolicyDocument": document}
   - Add all policies to collection
+  - Ensures compatibility per supported-features.md §3.1
 
 ### Phase 4: Create New Analyzers Using ResourceDefinition
 
@@ -190,13 +202,15 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test extracts PolicyDocument from properties
   - Test returns same vulnerabilities as old analyzer
   - Test with various policy documents (wildcard, privilege escalation, etc.)
+  - **Backward Compatibility:** Verify produces identical findings to existing analyze_policy() for same input
 
 [ ] Implement IAM Policy analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/iam_policy/resource_analyzer.py`
   - Create analyze_iam_policy_from_resource(resource_def: ResourceDefinition)
   - Extract PolicyDocument from resource_def.properties
-  - Call existing analyze_policy() function
+  - Call existing analyze_policy() function (reuse existing logic)
   - Return findings
+  - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 [ ] Write unit tests for IAM Role analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/iam_role/test_resource_analyzer.py`
@@ -207,7 +221,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test retrieves policy ResourceDefinitions from collection using `collection.get_by_id()`
   - Test analyzes all referenced policies
   - Test aggregates findings from trust policy + all policies
-  - Test returns same vulnerabilities as old analyzer
+  - **Backward Compatibility:** Verify produces identical findings to existing analyze_iam_role() for same input
 
 [ ] Implement IAM Role analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/iam_role/resource_analyzer.py`
@@ -218,6 +232,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Analyze each policy using analyze_iam_policy_from_resource()
   - Aggregate all findings with proper context
   - Return findings
+  - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 [ ] Write unit tests for S3 Bucket analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/s3/test_resource_analyzer.py`
@@ -226,7 +241,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test extracts bucket configuration from properties
   - Test finds referenced bucket policy via resource_def.references if exists
   - Test analyzes bucket with and without policy
-  - Test returns same vulnerabilities as old analyzer
+  - **Backward Compatibility:** Verify produces identical findings to existing analyze_s3_bucket() for same input
 
 [ ] Implement S3 Bucket analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/s3/resource_analyzer.py`
@@ -234,53 +249,69 @@ cssm --cloudformation dir:templates/ --output report.json
   - Extract bucket properties (PublicAccessBlockConfiguration, AclGrants, etc.)
   - Find referenced policy via resource_def.references if exists
   - Get policy ResourceDefinition from collection using `collection.get_by_id()` if referenced
-  - Call existing S3 analysis functions with extracted data
+  - Call existing S3 analysis functions with extracted data (reuse existing logic)
   - Return findings
+  - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 [ ] Write unit tests for Security Group analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/sg/test_resource_analyzer.py`
   - Test analyze_sg_from_resource() function
   - Test accepts ResourceDefinition
   - Test extracts IngressRules from properties
-  - Test returns same vulnerabilities as old analyzer
+  - **Backward Compatibility:** Verify produces identical findings to existing analyze_sg() for same input
 
 [ ] Implement Security Group analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/sg/resource_analyzer.py`
   - Create analyze_sg_from_resource(resource_def: ResourceDefinition)
   - Extract IngressRules from resource_def.properties
-  - Call existing SG analysis functions
+  - Call existing SG analysis functions (reuse existing logic)
   - Return findings
+  - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 ### Phase 5: Update Scanners and Wire Components
 
 [ ] Update iam_role_scanner.py to use new collector and analyzer
-  - Change FileIamRoleCollector to return ResourceCollection
+  - Import ResourceFileIamRoleCollector and analyze_iam_role_from_resource()
+  - Change get_collector() to return new collector for file-based scanning
+  - Update analyze_roles() to work with ResourceCollection
   - Use analyze_iam_role_from_resource() instead of old analyzer
   - Convert ResourceCollection findings back to old output format for compatibility
-  - Verify existing integration tests pass
+  - **CRITICAL:** Verify existing integration tests pass (tests/integration_tests/)
+  - **CRITICAL:** Verify examples work: `aws-scanner iam --file examples/iam/roles/overly_permissive_lambda_role.json`
 
 [ ] Update iam_policy_scanner.py to use new collector and analyzer
-  - Change collector to return ResourceCollection
+  - Import ResourceFileIamPolicyCollector and analyze_iam_policy_from_resource()
+  - Change get_collector() to return new collector for file-based scanning
+  - Update analyze_policies() to work with ResourceCollection
   - Use analyze_iam_policy_from_resource() instead of old analyzer
   - Convert findings to old output format
-  - Verify existing integration tests pass
+  - **CRITICAL:** Verify existing integration tests pass
+  - **CRITICAL:** Verify examples work: `aws-scanner iam --policies --file examples/iam/policies/wildcard_admin.json`
 
 [ ] Update s3_scanner.py to use new collector and analyzer
-  - Change FileS3Collector to return ResourceCollection
+  - Import ResourceFileS3Collector and analyze_s3_bucket_from_resource()
+  - Change get_collector() to return new collector for file-based scanning
+  - Update analyze_buckets() to work with ResourceCollection
   - Use analyze_s3_bucket_from_resource() instead of old analyzer
   - Convert findings to old output format
-  - Verify existing integration tests pass
+  - **CRITICAL:** Verify existing integration tests pass
+  - **CRITICAL:** Verify examples work: `aws-scanner s3 --file examples/s3/public_s3_bucket.json`
 
 [ ] Update sg_scanner.py to use new collector and analyzer
-  - Change FileSgCollector to return ResourceCollection
+  - Import ResourceFileSgCollector and analyze_sg_from_resource()
+  - Change get_collector() to return new collector for file-based scanning
+  - Update analyze_security_groups() to work with ResourceCollection
   - Use analyze_sg_from_resource() instead of old analyzer
   - Convert findings to old output format
-  - Verify existing integration tests pass
+  - **CRITICAL:** Verify existing integration tests pass
+  - **CRITICAL:** Verify examples work: `aws-scanner sg --file examples/sg/open_security_group.json`
 
 [ ] Update scan_orchestrator.py and verify integration tests pass
   - Verify all scanners work together
-  - Run full integration test suite
+  - Run full integration test suite: `pytest tests/integration_tests/`
+  - Verify all example files still work correctly
   - All tests should be green
+  - **Backward Compatibility Check:** No regressions in existing functionality
 
 ### Phase 6: Cleanup and Deprecation
 
@@ -316,6 +347,26 @@ cssm --cloudformation dir:templates/ --output report.json
 
 ---
 
+## Backward Compatibility Summary
+
+**Maintains 100% compatibility with:**
+- IAM Policy file format (supported-features.md §3.1) - single object, dict, list, AWS CLI formats
+- IAM Role file format (supported-features.md §3.2) - dict with role names as keys
+- S3 Bucket file format (supported-features.md §3.3) - dict with bucket names as keys, ACL string conversion
+- Security Group file format (supported-features.md §3.4) - single object format
+- All field aliases (trust_policy_document, pab_config, block_public_access, ingress_permissions)
+- All existing example files in examples/ directory
+- All existing CLI commands and flags
+- All vulnerability detection rules (identical findings)
+
+**No breaking changes in:**
+- Phase 3: New collectors support all existing file formats
+- Phase 4: New analyzers produce identical findings
+- Phase 5: Scanner updates maintain output format compatibility
+- Phase 6: Cleanup only removes internal classes, not external APIs
+
+---
+
 ## Notes
 
 - Use TDD for each step: write test first, then implement
@@ -324,3 +375,5 @@ cssm --cloudformation dir:templates/ --output report.json
 - Maintain backward compatibility until Phase 6 cleanup
 - Always use exact method names from API Reference section above
 - When in doubt about API, check existing code in `src/aws_scanner/engines/common/resource_definition.py`
+- **CRITICAL**: Every undone task explicitly mentions backward compatibility requirements where applicable
+- Validate all changes against existing example files before considering task complete
