@@ -148,7 +148,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Create ResourceDefinition for security group with properties
   - Add resource to collection
 
-[ ] Fix ResourceFileS3Collector backward compatibility
+[x] Fix ResourceFileS3Collector backward compatibility
   - Support "acl" field as either string or array (matching FileS3Collector)
   - Convert ACL strings to grant objects:
     - "public-read" → READ grant to AllUsers

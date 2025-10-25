@@ -1,4 +1,5 @@
 import json
+from typing import List, Dict, Any
 from aws_scanner.engines.common.resource_definition import (
     ResourceCollection,
     ResourceDefinition,
@@ -37,17 +38,66 @@ class ResourceFileS3Collector:
                     reference_type=ReferenceType.INLINE
                 ))
 
+            acl_grants = self._process_acl_field(bucket_dict)
+            pab_config = self._get_pab_config(bucket_dict)
+
             bucket_resource = ResourceDefinition(
                 logical_id=bucket_name,
                 resource_type="AWS::S3::Bucket",
                 properties={
                     "BucketName": bucket_name,
-                    "AclGrants": bucket_dict.get("acl_grants", []),
+                    "AclGrants": acl_grants,
                     "BucketPolicy": policy,
-                    "PublicAccessBlockConfiguration": bucket_dict.get("public_access_block")
+                    "PublicAccessBlockConfiguration": pab_config
                 },
                 references=bucket_references
             )
             collection.add_resource(bucket_resource)
 
         return collection
+
+    def _process_acl_field(self, bucket_dict: Dict[str, Any]) -> List[Dict[str, Any]]:
+        acl_value = bucket_dict.get("acl", bucket_dict.get("acl_grants", []))
+
+        if isinstance(acl_value, str):
+            return self._convert_acl_string_to_grants(acl_value)
+        elif isinstance(acl_value, list):
+            return acl_value
+        else:
+            return []
+
+    def _get_pab_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
+        return (bucket_dict.get("public_access_block") or
+                bucket_dict.get("block_public_access") or
+                bucket_dict.get("pab_config"))
+
+    def _convert_acl_string_to_grants(self, acl_string: str) -> List[Dict[str, Any]]:
+        if acl_string == "public-read":
+            return [{
+                "Grantee": {
+                    "Type": "Group",
+                    "URI": "http://acs.amazonaws.com/groups/global/AllUsers"
+                },
+                "Permission": "READ"
+            }]
+        elif acl_string == "public-read-write":
+            return [
+                {
+                    "Grantee": {
+                        "Type": "Group",
+                        "URI": "http://acs.amazonaws.com/groups/global/AllUsers"
+                    },
+                    "Permission": "READ"
+                },
+                {
+                    "Grantee": {
+                        "Type": "Group",
+                        "URI": "http://acs.amazonaws.com/groups/global/AllUsers"
+                    },
+                    "Permission": "WRITE"
+                }
+            ]
+        elif acl_string == "private":
+            return []
+        else:
+            return []

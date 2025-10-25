@@ -195,3 +195,138 @@ def test_bucket_with_missing_optional_fields():
         assert bucket_def.properties["AclGrants"] == []
         assert bucket_def.properties["BucketPolicy"] is None
         assert bucket_def.properties["PublicAccessBlockConfiguration"] is None
+
+
+def test_acl_string_public_read_converts_to_grants():
+    test_data = {
+        "test-bucket": {
+            "acl": "public-read",
+            "policy": None,
+            "public_access_block": None
+        }
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
+        collector = ResourceFileS3Collector("test_file.json")
+        result = collector.collect()
+
+        bucket_def = result.get_by_id("test-bucket")
+        acl_grants = bucket_def.properties["AclGrants"]
+
+        assert len(acl_grants) == 1
+        assert acl_grants[0]["Permission"] == "READ"
+        assert acl_grants[0]["Grantee"]["Type"] == "Group"
+        assert acl_grants[0]["Grantee"]["URI"] == "http://acs.amazonaws.com/groups/global/AllUsers"
+
+
+def test_acl_string_public_read_write_converts_to_grants():
+    test_data = {
+        "test-bucket": {
+            "acl": "public-read-write",
+            "policy": None,
+            "public_access_block": None
+        }
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
+        collector = ResourceFileS3Collector("test_file.json")
+        result = collector.collect()
+
+        bucket_def = result.get_by_id("test-bucket")
+        acl_grants = bucket_def.properties["AclGrants"]
+
+        assert len(acl_grants) == 2
+        assert acl_grants[0]["Permission"] == "READ"
+        assert acl_grants[1]["Permission"] == "WRITE"
+        assert all(g["Grantee"]["URI"] == "http://acs.amazonaws.com/groups/global/AllUsers" for g in acl_grants)
+
+
+def test_acl_string_private_converts_to_empty_grants():
+    test_data = {
+        "test-bucket": {
+            "acl": "private",
+            "policy": None,
+            "public_access_block": None
+        }
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
+        collector = ResourceFileS3Collector("test_file.json")
+        result = collector.collect()
+
+        bucket_def = result.get_by_id("test-bucket")
+        acl_grants = bucket_def.properties["AclGrants"]
+
+        assert len(acl_grants) == 0
+
+
+def test_acl_array_passthrough_preserved():
+    custom_grants = [
+        {
+            "Grantee": {"Type": "CanonicalUser", "ID": "user123"},
+            "Permission": "FULL_CONTROL"
+        }
+    ]
+
+    test_data = {
+        "test-bucket": {
+            "acl": custom_grants,
+            "policy": None,
+            "public_access_block": None
+        }
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
+        collector = ResourceFileS3Collector("test_file.json")
+        result = collector.collect()
+
+        bucket_def = result.get_by_id("test-bucket")
+        acl_grants = bucket_def.properties["AclGrants"]
+
+        assert acl_grants == custom_grants
+
+
+def test_pab_alias_block_public_access():
+    pab_config = {
+        "BlockPublicAcls": True,
+        "IgnorePublicAcls": True,
+        "BlockPublicPolicy": False,
+        "RestrictPublicBuckets": False
+    }
+
+    test_data = {
+        "test-bucket": {
+            "acl": "private",
+            "policy": None,
+            "block_public_access": pab_config
+        }
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
+        collector = ResourceFileS3Collector("test_file.json")
+        result = collector.collect()
+        bucket_def = result.get_by_id("test-bucket")
+        assert bucket_def.properties["PublicAccessBlockConfiguration"] == pab_config
+
+
+def test_pab_alias_pab_config():
+    pab_config = {
+        "BlockPublicAcls": True,
+        "IgnorePublicAcls": True,
+        "BlockPublicPolicy": False,
+        "RestrictPublicBuckets": False
+    }
+
+    test_data = {
+        "test-bucket": {
+            "acl": "private",
+            "policy": None,
+            "pab_config": pab_config
+        }
+    }
+
+    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
+        collector = ResourceFileS3Collector("test_file.json")
+        result = collector.collect()
+        bucket_def = result.get_by_id("test-bucket")
+        assert bucket_def.properties["PublicAccessBlockConfiguration"] == pab_config
