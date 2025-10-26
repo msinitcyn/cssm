@@ -176,7 +176,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test can retrieve policy from collection using `collection.get_by_id()`
   - Validate against examples/iam/policies/wildcard_admin.json, assume_role_wildcard.json, privilege_escalation.json
 
-[ ] Implement ResourceFileIamPolicyCollector
+[x] Implement ResourceFileIamPolicyCollector
   - New file: src/aws_scanner/engines/iam_policy/resource_file_iam_policy_collector.py
   - Implement collect() returning ResourceCollection
   - Create ResourceDefinition for each IAM policy with properties
