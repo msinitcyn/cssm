@@ -195,7 +195,7 @@ cssm --cloudformation dir:templates/ --output report.json
 
 ### Phase 4: Create New Analyzers Using ResourceDefinition
 
-[ ] Write unit tests for IAM Policy analyzer using ResourceDefinition
+[x] Write unit tests for IAM Policy analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/iam_policy/test_resource_analyzer.py`
   - Test analyze_iam_policy_from_resource() function
   - Test accepts ResourceDefinition with resource_type="AWS::IAM::Policy"
