@@ -195,6 +195,12 @@ cssm --cloudformation dir:templates/ --output report.json
 
 ### Phase 4: Create New Analyzers Using ResourceDefinition
 
+**CRITICAL**: New analyzers must be completely self-contained and NOT depend on:
+- Old data classes (IamPolicyData, IamRoleData, S3BucketData, SgData)
+- Old utility modules (policy_analyzer_utils.py)
+
+All analysis logic should be inlined directly into the new analyzers. This enables clean deprecation in Phase 6.
+
 [x] Write unit tests for IAM Policy analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/iam_policy/test_resource_analyzer.py`
   - Test analyze_iam_policy_from_resource() function
@@ -204,13 +210,32 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test with various policy documents (wildcard, privilege escalation, etc.)
   - **Backward Compatibility:** Verify produces identical findings to existing analyze_policy() for same input
 
-[ ] Implement IAM Policy analyzer using ResourceDefinition
+[x] Implement IAM Policy analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/iam_policy/resource_analyzer.py`
   - Create analyze_iam_policy_from_resource(resource_def: ResourceDefinition)
   - Extract PolicyDocument from resource_def.properties
-  - Call existing analyze_policy() function (reuse existing logic)
-  - Return findings
+  - **DO NOT import or use IamPolicyData, analyze_policy(), or analyze_statement()**
+  - **INLINE all analysis logic** from policy_analyzer_utils.py:
+    - Copy constants: RESTRICTIVE_KEYS, SENSITIVE_ACTIONS, PRIVILEGE_ESCALATION_PATTERNS
+    - Copy helper functions as private: _is_restrictive(), _has_privilege_escalation(), etc.
+    - Copy statement analysis logic inline
+  - Iterate through statements in PolicyDocument
+  - For each Allow statement, apply all vulnerability checks
+  - Aggregate findings from all statements
+  - Return findings list
   - **Backward Compatibility:** Must produce identical findings to current analyzer
+
+**Why inline everything?**
+- policy_analyzer_utils.py depends on IamPolicyData (will be deprecated)
+- New analyzers should have zero dependencies on deprecated code
+- Makes Phase 6 cleanup straightforward (just delete old modules)
+- Each analyzer is self-contained and maintainable
+
+**Analysis Flow:**
+```
+Old: ResourceDefinition → IamPolicyData → analyze_policy() → analyze_statement() → findings
+New: ResourceDefinition → [inlined logic] → findings
+```
 
 [ ] Write unit tests for IAM Role analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/iam_role/test_resource_analyzer.py`
@@ -227,11 +252,13 @@ cssm --cloudformation dir:templates/ --output report.json
   - New file: `src/aws_scanner/engines/iam_role/resource_analyzer.py`
   - Create analyze_iam_role_from_resource(resource_def: ResourceDefinition, collection: ResourceCollection)
   - Extract and analyze AssumeRolePolicyDocument from properties
+  - Inline trust policy analysis logic (from analyze_assume_role_policy())
   - Iterate through resource_def.references
   - Get policy ResourceDefinitions from collection using `collection.get_by_id()`
-  - Analyze each policy using analyze_iam_policy_from_resource()
-  - Aggregate all findings with proper context
+  - For each policy: extract PolicyDocument and call analyze_iam_policy_from_resource()
+  - Aggregate all findings with proper context (policy_name, policy_type fields)
   - Return findings
+  - **DO NOT use IamRoleData, IamPolicyData, or old analyzer functions**
   - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 [ ] Write unit tests for S3 Bucket analyzer using ResourceDefinition
@@ -246,11 +273,12 @@ cssm --cloudformation dir:templates/ --output report.json
 [ ] Implement S3 Bucket analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/s3/resource_analyzer.py`
   - Create analyze_s3_bucket_from_resource(resource_def: ResourceDefinition, collection: ResourceCollection)
-  - Extract bucket properties (PublicAccessBlockConfiguration, AclGrants, etc.)
+  - Extract bucket properties directly from resource_def.properties
   - Find referenced policy via resource_def.references if exists
   - Get policy ResourceDefinition from collection using `collection.get_by_id()` if referenced
-  - Call existing S3 analysis functions with extracted data (reuse existing logic)
+  - Inline S3 analysis logic from s3/analyzer.py (don't call old functions)
   - Return findings
+  - **DO NOT use S3BucketData**
   - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 [ ] Write unit tests for Security Group analyzer using ResourceDefinition
@@ -263,9 +291,10 @@ cssm --cloudformation dir:templates/ --output report.json
 [ ] Implement Security Group analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/sg/resource_analyzer.py`
   - Create analyze_sg_from_resource(resource_def: ResourceDefinition)
-  - Extract IngressRules from resource_def.properties
-  - Call existing SG analysis functions (reuse existing logic)
+  - Extract IngressRules directly from resource_def.properties
+  - Inline SG analysis logic from sg/analyzer.py (don't call old functions)
   - Return findings
+  - **DO NOT use SgData**
   - **Backward Compatibility:** Must produce identical findings to current analyzer
 
 ### Phase 5: Update Scanners and Wire Components

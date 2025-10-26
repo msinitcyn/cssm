@@ -52,17 +52,17 @@ def test_analyze_iam_policy_from_resource_extracts_policy_document():
         }
     )
 
-    with patch("aws_scanner.engines.iam_policy.resource_analyzer.analyze_policy") as mock_analyze:
-        mock_analyze.return_value = [{"type": "test_finding"}]
+    with patch("aws_scanner.engines.iam_policy.resource_analyzer._analyze_statement") as mock_analyze_stmt:
+        mock_analyze_stmt.return_value = [{"type": "test_finding"}]
 
         from aws_scanner.engines.iam_policy.resource_analyzer import analyze_iam_policy_from_resource
 
-        analyze_iam_policy_from_resource(resource_def)
+        findings = analyze_iam_policy_from_resource(resource_def)
 
-        mock_analyze.assert_called_once()
-        call_args = mock_analyze.call_args[0][0]
-        assert hasattr(call_args, 'document')
-        assert call_args.document == policy_document
+        mock_analyze_stmt.assert_called_once()
+        call_args = mock_analyze_stmt.call_args[0][0]
+        assert call_args == policy_document["Statement"][0]
+        assert len(findings) == 1
 
 
 def test_analyze_iam_policy_from_resource_wildcard_all():
@@ -260,7 +260,7 @@ def test_analyze_iam_policy_from_resource_multiple_statements():
 
 
 def test_analyze_iam_policy_from_resource_backward_compatibility():
-    from aws_scanner.engines.iam_policy.iam_policy_data import IamPolicyData
+    from aws_scanner.engines.common.iam_policy_data import IamPolicyData
     from aws_scanner.engines.common.policy_analyzer_utils import analyze_policy
 
     policy_document = {
