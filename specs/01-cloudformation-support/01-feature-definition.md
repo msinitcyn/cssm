@@ -269,7 +269,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test with role that has broad trust policy (Principal: "*")
   - Test with role that has restrictive trust policy
 
-[ ] Implement IAM Role analyzer using ResourceDefinition
+[x] Implement IAM Role analyzer using ResourceDefinition
   - New file: `src/aws_scanner/engines/iam_role/resource_analyzer.py`
   - Create analyze_iam_role_from_resource(resource_def: ResourceDefinition)
   - Extract AssumeRolePolicyDocument from resource_def.properties
