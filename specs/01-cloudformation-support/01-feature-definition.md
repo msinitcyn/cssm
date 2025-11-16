@@ -259,7 +259,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Aggregate findings from all statements
   - Return findings list
 
-[ ] Write unit tests for IAM Role analyzer using ResourceDefinition
+[x] Write unit tests for IAM Role analyzer using ResourceDefinition
   - Test file: `tests/unit_tests/engines/iam_role/test_resource_analyzer.py`
   - Test analyze_iam_role_from_resource() function
   - Test accepts ResourceDefinition (role only, no ResourceCollection parameter)
