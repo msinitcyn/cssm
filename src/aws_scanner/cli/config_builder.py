@@ -1,5 +1,5 @@
 from typing import Optional
-from aws_scanner.core.configs import RunConfig, S3Config, IamRoleConfig, IamPolicyConfig, SgConfig, ReportConfig
+from aws_scanner.core.configs import RunConfig, S3Config, IamRoleConfig, IamPolicyConfig, SgConfig, CloudFormationConfig, ReportConfig
 
 def create_run_config(args) -> RunConfig:
     return RunConfig(
@@ -7,6 +7,7 @@ def create_run_config(args) -> RunConfig:
         iam_role=build_iam_role_config(args),
         iam_policy=build_iam_policy_config(args),
         sg=build_sg_config(args),
+        cloudformation=build_cloudformation_config(args),
         report=build_report_config(args)
     )
 
@@ -47,6 +48,11 @@ def build_sg_config(args) -> Optional[SgConfig]:
         regions=regions,
         file=getattr(args, "file", None)
     )
+
+def build_cloudformation_config(args) -> Optional[CloudFormationConfig]:
+    if not hasattr(args, 'cloudformation') or not args.cloudformation:
+        return None
+    return CloudFormationConfig(file=str(args.cloudformation))
 
 def build_report_config(args) -> ReportConfig:
     return ReportConfig(

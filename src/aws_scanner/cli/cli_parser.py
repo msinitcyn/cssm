@@ -8,9 +8,13 @@ def get_args():
     parser.add_argument("--output", type=Path, default=Path("output/report.json"),
                         help="Path to save JSON report")
     parser.add_argument("--html", action="store_true", help="Also generate HTML summary report")
+    parser.add_argument("--cloudformation", type=Path, help="Path to CloudFormation template file")
     parser.add_argument("command", nargs='?', choices=['s3', 'iam', 'sg'], help="Scan target")
 
     args, remaining = parser.parse_known_args()
+
+    if args.cloudformation:
+        return args
 
     if args.command == "iam":
         iam_parser = argparse.ArgumentParser(description="Scan IAM roles or policies")
