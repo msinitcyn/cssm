@@ -102,7 +102,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 6.4 Verify All File-Based Scanning Works
 
-[ ] Run full test suite
+[x] Run full test suite
   - Run: `pytest tests/unit_tests/`
   - Run: `pytest tests/integration_tests/test_cloudformation_scanning.py`
   - All tests should pass
