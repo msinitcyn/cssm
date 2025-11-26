@@ -78,7 +78,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 7.3 Create Resource AWS S3 Collector
 
-[ ] Write unit tests for ResourceAwsS3Collector
+[x] Write unit tests for ResourceAwsS3Collector
   - Test file: `tests/unit_tests/engines/s3/test_resource_aws_s3_collector.py`
   - Test `collect()` returns ResourceCollection
   - Test S3 buckets become ResourceDefinition with type "AWS::S3::Bucket"
@@ -90,7 +90,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test handles no bucket_name parameter (scan all buckets)
   - All tests should FAIL initially (TDD)
 
-[ ] Implement ResourceAwsS3Collector
+[x] Implement ResourceAwsS3Collector
   - New file: `src/aws_scanner/engines/s3/resource_aws_s3_collector.py`
   - Create `ResourceAwsS3Collector(boto3_wrapper, bucket_name=None)`
   - Implement `collect() -> ResourceCollection`
