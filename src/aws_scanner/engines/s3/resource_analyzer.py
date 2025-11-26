@@ -26,6 +26,13 @@ def analyze_s3_bucket_from_resource(resource_def: ResourceDefinition) -> List[Di
             )
         )
 
+    if _check_public_policy(props, pab):
+        findings.append(
+            VULNERABILITIES["S3_PUBLIC_POLICY"].instantiate(
+                entity_name=resource_def.logical_id
+            )
+        )
+
     findings.extend(_check_cors_vulnerabilities(props, resource_def.logical_id))
 
     if _check_website_hosting(props):
@@ -91,6 +98,33 @@ def _check_public_acl(props: Dict[str, Any], pab: Dict[str, Any]) -> bool:
         grant.get("Grantee", {}).get("URI") == ALL_USERS_URI
         for grant in acl_grants
     )
+
+
+def _check_public_policy(props: Dict[str, Any], pab: Dict[str, Any]) -> bool:
+    block_policy = pab.get("BlockPublicPolicy", False)
+    restrict_policy = pab.get("RestrictPublicBuckets", False)
+    if block_policy and restrict_policy:
+        return False
+
+    policy_doc = props.get("Policy", {})
+    if not policy_doc:
+        return False
+
+    for stmt in policy_doc.get("Statement", []):
+        if stmt.get("Effect") != "Allow":
+            continue
+        principal = stmt.get("Principal")
+        if principal not in ("*", {"AWS": "*"}):
+            continue
+        action = stmt.get("Action")
+        if isinstance(action, str):
+            action = [action]
+        if not any(a in action for a in ("s3:GetObject", "s3:*")):
+            continue
+        if not stmt.get("Condition"):
+            return True
+
+    return False
 
 
 def _check_cors_vulnerabilities(props: Dict[str, Any], logical_id: str) -> List[Dict[str, Any]]:

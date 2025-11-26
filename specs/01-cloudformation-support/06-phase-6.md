@@ -33,7 +33,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test backward compatibility: same vulnerabilities detected
   - All tests should FAIL initially (TDD)
 
-[ ] Refactor cloudformation_scanner to use orchestrator
+[x] Refactor cloudformation_scanner to use orchestrator
   - File: `src/aws_scanner/engines/cloudformation/cloudformation_scanner.py`
   - Step 1: Use CloudFormationReader → ResourceCollection
   - Step 2: Extract inline policies from IAM roles, add to collection
