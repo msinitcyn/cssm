@@ -48,7 +48,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 7.2 Create Resource AWS IAM Role Collector
 
-[ ] Write unit tests for ResourceAwsIamRoleCollector
+[x] Write unit tests for ResourceAwsIamRoleCollector
   - Test file: `tests/unit_tests/engines/iam_role/test_resource_aws_iam_role_collector.py`
   - Test `collect()` returns ResourceCollection
   - Test IAM roles become ResourceDefinition with type "AWS::IAM::Role"
