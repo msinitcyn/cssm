@@ -47,7 +47,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 6.2 Create Result Formatter
 
-[ ] Write unit tests for result formatter
+[x] Write unit tests for result formatter
   - Test file: `tests/unit_tests/core/test_result_formatter.py`
   - Test `format_results(findings: List[Dict]) → Dict[str, List]`
   - Test groups findings by entity_type (iam_role, s3_bucket, security_group)
