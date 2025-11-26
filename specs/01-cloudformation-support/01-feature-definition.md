@@ -342,7 +342,7 @@ cssm --cloudformation dir:templates/ --output report.json
 
 **Goal**: Create a single orchestrator that can analyze any ResourceCollection by routing each resource to the appropriate analyzer.
 
-[ ] Write unit tests for universal resource orchestrator
+[x] Write unit tests for universal resource orchestrator
   - Test file: `tests/unit_tests/core/test_resource_orchestrator.py`
   - Test orchestrator accepts ResourceCollection
   - Test iterates through all resources
@@ -354,7 +354,7 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test handles unknown resource types gracefully (skip with warning)
   - Test with ResourceCollection containing multiple resource types
 
-[ ] Implement universal resource orchestrator
+[x] Implement universal resource orchestrator
   - New file: `src/aws_scanner/core/resource_orchestrator.py`
   - Create analyze_resources(collection: ResourceCollection) function
   - Iterate through all resources in collection using `collection.resources`
@@ -369,29 +369,31 @@ cssm --cloudformation dir:templates/ --output report.json
   - Return findings list
   - Keep it simple - just routing and aggregation
 
-[ ] Create CloudFormation scanner using orchestrator
+[x] Create CloudFormation scanner using orchestrator
   - New file: `src/aws_scanner/engines/cloudformation/cloudformation_scanner.py`
   - Create scan_cloudformation_template(file_path: str) function
   - Use CloudFormationReader to parse template
-  - Get ResourceCollection from reader
-  - Pass collection to resource_orchestrator.analyze_resources()
-  - Return findings in standard format
-  - Add metadata about source template
+  - Extract inline IAM policies from roles and analyze separately
+  - Handle AWS::S3::BucketPolicy resources with public policy detection
+  - Resolve CloudFormation !Ref references
+  - Return findings grouped by resource type (iam_roles, s3_buckets, security_groups)
 
-[ ] Wire CloudFormation scanner into CLI
-  - Update `src/aws_scanner/cli/arg_parser.py`:
-    - Add --cloudformation flag with file/dir argument
+[x] Wire CloudFormation scanner into CLI
+  - Update `src/aws_scanner/cli/cli_parser.py`:
+    - Add --cloudformation flag with file argument
     - Document usage
   - Update `src/aws_scanner/cli/config_builder.py`:
     - Add CloudFormationConfig
     - Handle --cloudformation flag
-  - Update `src/aws_scanner/core/scan_orchestrator.py`:
+  - Update `src/aws_scanner/core/configs.py`:
+    - Add CloudFormationConfig dataclass
+  - Update `src/aws_scanner/scanners/scan_orchestrator.py`:
     - Import CloudFormation scanner
     - Route --cloudformation requests to CloudFormation scanner
     - Use existing report generator for output
   - Validate with integration test
 
-[ ] Verify CloudFormation integration test passes
+[x] Verify CloudFormation integration test passes
   - Run test_cloudformation_scanning.py
   - All CloudFormation vulnerabilities should be detected
   - Test should pass
