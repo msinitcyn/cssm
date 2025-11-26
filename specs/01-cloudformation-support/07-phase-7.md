@@ -135,7 +135,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 7.5 Wire Resource AWS Collectors into scan_orchestrator
 
-[ ] Write unit tests for scan_orchestrator with AWS collectors
+[x] Write unit tests for scan_orchestrator with AWS collectors
   - Test file: `tests/unit_tests/scanners/test_scan_orchestrator_aws.py`
   - Test IAM policy AWS path: ResourceAwsIamPolicyCollector → resource_orchestrator → format_results
   - Test IAM role AWS path: ResourceAwsIamRoleCollector → resource_orchestrator → format_results
@@ -144,7 +144,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test boto3_wrapper is passed to collectors
   - All tests should FAIL initially (TDD)
 
-[ ] Update scan_orchestrator to use Resource AWS collectors
+[x] Update scan_orchestrator to use Resource AWS collectors
   - File: `src/aws_scanner/scanners/scan_orchestrator.py`
   - Update `_get_collector(config)`:
     - If iam_policy + no file: return ResourceAwsIamPolicyCollector(boto3_wrapper, config.iam_policy.attached_only)
