@@ -26,7 +26,6 @@ class AwsIamRoleCollector(IamRoleCollector):
                 except botocore.exceptions.ClientError:
                     trust_policy = {}
 
-                # Inline policies
                 try:
                     response = iam.list_role_policies(RoleName=role_name)
                     for policy_name in response.get("PolicyNames", []):
@@ -46,7 +45,6 @@ class AwsIamRoleCollector(IamRoleCollector):
                         is_inline=True
                     ))
 
-                # Attached policies
                 try:
                     response = iam.list_attached_role_policies(RoleName=role_name)
                     for policy in response.get("AttachedPolicies", []):

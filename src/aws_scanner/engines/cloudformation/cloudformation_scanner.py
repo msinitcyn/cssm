@@ -56,12 +56,10 @@ def _extract_bucket_policies(collection: ResourceCollection) -> None:
             target_bucket = collection.resources.get(bucket_logical_id)
             if target_bucket:
                 bucket_name = target_bucket.properties.get("BucketName", bucket_logical_id)
-                # Add policy document to bucket properties for S3 analyzer
                 target_bucket.properties["Policy"] = policy_doc
             else:
                 bucket_name = bucket_ref if isinstance(bucket_ref, str) else bucket_logical_id
 
-            # Also create IAM policy resource for IAM policy analysis
             policy_as_iam_resource = ResourceDefinition(
                 logical_id=f"{policy_resource.logical_id}-AsPolicy",
                 resource_type="AWS::IAM::Policy",
@@ -78,13 +76,7 @@ def _fix_entity_names_for_inline_policies(findings: List[Dict[str, Any]], policy
     """Fix entity_name in findings for inline policies extracted from roles."""
     for finding in findings:
         if finding.get("entity_type") == "iam_policy" and finding.get("entity_name") == "policy":
-            # This is an inline policy finding, update entity_name to the parent role name
-            # The policy_to_role_map keys are policy logical_ids, but we need to match by the fact that
-            # the finding came from an inline policy. Since all inline policies have entity_name="policy" (hardcoded in analyzer),
-            # we need to figure out which role it belongs to. For now, if there's only one role, use that.
-            # Better approach: check if we can match based on the statement in raw_data
             if policy_to_role_map:
-                # Use the first role name (works for single role, needs better logic for multiple roles)
                 role_name = next(iter(policy_to_role_map.values()))
                 finding["entity_name"] = role_name
 

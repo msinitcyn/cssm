@@ -26,7 +26,7 @@
 
 [ ] Verify all tests pass
   - Run full test suite: `pytest` ✓
-  - 341 unit tests passing
+  - 365 unit tests passing
   - 1 integration test passing
   - No regressions
   - All tests green
