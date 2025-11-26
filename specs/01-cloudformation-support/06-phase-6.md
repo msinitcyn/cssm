@@ -23,7 +23,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 6.1 Wire Orchestrator into CloudFormation Scanner
 
-[ ] Write unit tests for cloudformation_scanner using orchestrator
+[x] Write unit tests for cloudformation_scanner using orchestrator
   - Test file: `tests/unit_tests/engines/cloudformation/test_cloudformation_scanner.py`
   - Test `scan_cloudformation_template()` uses CloudFormationReader
   - Test calls `resource_orchestrator.analyze_resources(collection)`
