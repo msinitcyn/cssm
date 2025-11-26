@@ -19,7 +19,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 7.1 Create Resource AWS IAM Policy Collector
 
-[ ] Write unit tests for ResourceAwsIamPolicyCollector
+[x] Write unit tests for ResourceAwsIamPolicyCollector
   - Test file: `tests/unit_tests/engines/iam_policy/test_resource_aws_iam_policy_collector.py`
   - Test `collect()` returns ResourceCollection
   - Test IAM policies become ResourceDefinition with type "AWS::IAM::Policy"
