@@ -71,7 +71,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 6.3 Update scan_orchestrator to Use New Pattern
 
-[ ] Write unit tests for updated scan_orchestrator
+[x] Write unit tests for updated scan_orchestrator
   - Test file: `tests/unit_tests/scanners/test_scan_orchestrator_unified.py`
   - Test CloudFormation path: CloudFormationReader → resource_orchestrator → format_results
   - Test IAM policy file path: ResourceFileIamPolicyCollector → resource_orchestrator → format_results
