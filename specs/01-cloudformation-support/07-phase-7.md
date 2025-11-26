@@ -108,7 +108,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 7.4 Create Resource AWS Security Group Collector
 
-[ ] Write unit tests for ResourceAwsSecurityGroupCollector
+[x] Write unit tests for ResourceAwsSecurityGroupCollector
   - Test file: `tests/unit_tests/engines/sg/test_resource_aws_security_group_collector.py`
   - Test `collect()` returns ResourceCollection
   - Test security groups become ResourceDefinition with type "AWS::EC2::SecurityGroup"
@@ -118,7 +118,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test collects from multiple regions when specified
   - All tests should FAIL initially (TDD)
 
-[ ] Implement ResourceAwsSecurityGroupCollector
+[x] Implement ResourceAwsSecurityGroupCollector
   - New file: `src/aws_scanner/engines/sg/resource_aws_security_group_collector.py`
   - Create `ResourceAwsSecurityGroupCollector(boto3_wrapper, regions)`
   - Implement `collect() -> ResourceCollection`
