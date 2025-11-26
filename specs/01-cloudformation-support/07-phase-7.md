@@ -31,7 +31,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test handles get_policy_version errors gracefully
   - All tests should FAIL initially (TDD)
 
-[ ] Implement ResourceAwsIamPolicyCollector
+[x] Implement ResourceAwsIamPolicyCollector
   - New file: `src/aws_scanner/engines/iam_policy/resource_aws_iam_policy_collector.py`
   - Create `ResourceAwsIamPolicyCollector(boto3_wrapper, attached_only)`
   - Implement `collect() -> ResourceCollection`
