@@ -60,7 +60,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test handles list_attached_role_policies errors gracefully
   - All tests should FAIL initially (TDD)
 
-[ ] Implement ResourceAwsIamRoleCollector
+[x] Implement ResourceAwsIamRoleCollector
   - New file: `src/aws_scanner/engines/iam_role/resource_aws_iam_role_collector.py`
   - Create `ResourceAwsIamRoleCollector(boto3_wrapper)`
   - Implement `collect() -> ResourceCollection`
