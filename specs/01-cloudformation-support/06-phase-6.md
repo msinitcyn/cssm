@@ -81,7 +81,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test AWS API paths raise NotImplementedError (temporarily degraded)
   - All tests should FAIL initially (TDD)
 
-[ ] Implement unified scan_orchestrator
+[x] Implement unified scan_orchestrator
   - File: `src/aws_scanner/scanners/scan_orchestrator.py`
   - Add helper `get_collector(config)`:
     - If cloudformation: return CloudFormationReader(config.cloudformation.file)

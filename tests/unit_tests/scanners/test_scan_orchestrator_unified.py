@@ -16,20 +16,10 @@ from aws_scanner.engines.common.resource_definition import ResourceCollection
 
 
 @patch("aws_scanner.scanners.scan_orchestrator.generate_report")
-@patch("aws_scanner.scanners.scan_orchestrator.format_results")
-@patch("aws_scanner.scanners.scan_orchestrator.resource_orchestrator.analyze_resources")
-@patch("aws_scanner.scanners.scan_orchestrator.CloudFormationReader")
-def test_cloudformation_path(mock_cf_reader, mock_analyze, mock_format, mock_generate):
-    mock_collection = ResourceCollection()
-    mock_reader_instance = Mock()
-    mock_reader_instance.read.return_value = mock_collection
-    mock_cf_reader.return_value = mock_reader_instance
-
-    mock_findings = [{"entity_type": "iam_role", "entity_name": "role1"}]
-    mock_analyze.return_value = mock_findings
-
-    mock_formatted = {"iam_roles": [{"role_name": "role1", "vulnerabilities": []}]}
-    mock_format.return_value = mock_formatted
+@patch("aws_scanner.scanners.scan_orchestrator.scan_cloudformation_template")
+def test_cloudformation_path(mock_scan_cf, mock_generate):
+    mock_results = {"iam_roles": [{"role_name": "role1", "vulnerabilities": []}]}
+    mock_scan_cf.return_value = mock_results
 
     config = RunConfig(
         cloudformation=CloudFormationConfig(file="/path/to/template.yaml"),
@@ -42,11 +32,8 @@ def test_cloudformation_path(mock_cf_reader, mock_analyze, mock_format, mock_gen
 
     run_scan(config)
 
-    mock_cf_reader.assert_called_once_with("/path/to/template.yaml")
-    mock_reader_instance.read.assert_called_once()
-    mock_analyze.assert_called_once_with(mock_collection)
-    mock_format.assert_called_once_with(mock_findings)
-    mock_generate.assert_called_once_with(config.report, mock_formatted)
+    mock_scan_cf.assert_called_once_with("/path/to/template.yaml")
+    mock_generate.assert_called_once_with(config.report, mock_results)
 
 
 @patch("aws_scanner.scanners.scan_orchestrator.generate_report")
