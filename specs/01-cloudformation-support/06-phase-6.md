@@ -57,7 +57,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Test handles unknown entity types
   - All tests should FAIL initially (TDD)
 
-[ ] Implement result formatter
+[x] Implement result formatter
   - New file: `src/aws_scanner/core/result_formatter.py`
   - Create `format_results(findings: List[Dict[str, Any]]) → Dict[str, List]`
   - Read `entity_type` from each finding
