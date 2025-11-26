@@ -399,40 +399,163 @@ cssm --cloudformation dir:templates/ --output report.json
   - Test should pass
   - Verify examples work: `aws-scanner --cloudformation examples/cloudformation/vulnerable_stack.yaml`
 
-### Phase 6: Deprecation and Cleanup
+### Phase 6: Migrate File-Based Scanners to Resource Path
+
+**Goal**: Migrate file-based scanners to use ResourceCollection + resource analyzers (same as CloudFormation).
+
+**Current State**:
+- CloudFormation scanning uses: ResourceCollection → resource_orchestrator → resource analyzers
+- File-based scanning uses: Old collectors → List[DataClass] → old analyzers
+- AWS API scanning uses: Old collectors → List[DataClass] → old analyzers
+
+**Target State**:
+- File-based scanning migrates to: ResourceCollection → resource_orchestrator → resource analyzers
+- AWS API scanning stays on old path (no change)
+
+#### 6.1 Migrate IAM Policy Scanner
+
+[ ] Write unit tests for migrated IAM policy scanner
+  - Test file: `tests/unit_tests/scanners/test_iam_policy_scanner_migration.py`
+  - Test `get_collector()` returns ResourceFileIamPolicyCollector for file-based scanning
+  - Test `get_collector()` still returns AwsIamPolicyCollector for AWS API scanning (unchanged)
+  - Test `analyze_policies()` accepts ResourceCollection
+  - Test `analyze_policies()` iterates through resources and calls analyze_iam_policy_from_resource()
+  - Test `analyze_policies()` formats results with policy_arn and policy_name from ResourceDefinition properties
+  - Test `run_scanner()` integrates collector + analyzer
+  - Test backward compatibility: same vulnerabilities detected for file-based scans
+  - All tests should FAIL initially (TDD)
+
+[ ] Implement migrated IAM policy scanner
+  - File: `src/aws_scanner/scanners/iam_policy_scanner.py`
+  - Update imports: add ResourceFileIamPolicyCollector, analyze_iam_policy_from_resource
+  - Update `get_collector()`: return ResourceFileIamPolicyCollector when config.file is set
+  - Update `analyze_policies()`:
+    - Change signature to accept ResourceCollection OR List[IamPolicyData] (detect type)
+    - If ResourceCollection: iterate resources.values(), call analyze_iam_policy_from_resource()
+    - If List[IamPolicyData]: use old path (for AWS API scanning)
+    - Extract policy_arn and policy_name from resource.properties
+  - Make all tests pass
+  - Verify backward compatibility: existing file-based scans still work
+
+#### 6.2 Migrate IAM Role Scanner
+
+[ ] Write unit tests for migrated IAM role scanner
+  - Test file: `tests/unit_tests/scanners/test_iam_role_scanner_migration.py`
+  - Test `get_collector()` returns ResourceFileIamRoleCollector for file-based scanning
+  - Test `get_collector()` still returns AwsIamRoleCollector for AWS API scanning (unchanged)
+  - Test `analyze_policies()` accepts ResourceCollection
+  - Test `analyze_policies()` uses resource_orchestrator.analyze_resources()
+  - Test `analyze_policies()` formats results with role_name from ResourceDefinition properties
+  - Test backward compatibility: same vulnerabilities detected
+  - All tests should FAIL initially (TDD)
+
+[ ] Implement migrated IAM role scanner
+  - File: `src/aws_scanner/scanners/iam_role_scanner.py`
+  - Update imports: add ResourceFileIamRoleCollector, resource_orchestrator
+  - Update `get_collector()`: return ResourceFileIamRoleCollector when config.file is set
+  - Update `analyze_policies()`:
+    - Change signature to accept ResourceCollection OR List[IamRoleData]
+    - If ResourceCollection: call resource_orchestrator.analyze_resources()
+    - If List[IamRoleData]: use old path (for AWS API scanning)
+    - Group findings by role
+  - Make all tests pass
+  - Verify backward compatibility
+
+#### 6.3 Migrate S3 Scanner
+
+[ ] Write unit tests for migrated S3 scanner
+  - Test file: `tests/unit_tests/scanners/test_s3_scanner_migration.py`
+  - Test `get_collector()` returns ResourceFileS3Collector for file-based scanning
+  - Test `get_collector()` still returns AwsS3Collector for AWS API scanning (unchanged)
+  - Test `analyze_s3_buckets()` accepts ResourceCollection
+  - Test `analyze_s3_buckets()` uses resource_orchestrator.analyze_resources()
+  - Test `analyze_s3_buckets()` formats results with bucket_name
+  - Test backward compatibility: same vulnerabilities detected
+  - All tests should FAIL initially (TDD)
+
+[ ] Implement migrated S3 scanner
+  - File: `src/aws_scanner/scanners/s3_scanner.py`
+  - Update imports: add ResourceFileS3Collector, resource_orchestrator
+  - Update `get_collector()`: return ResourceFileS3Collector when config.file is set
+  - Update `analyze_s3_buckets()`:
+    - Change signature to accept ResourceCollection OR List[S3BucketData]
+    - If ResourceCollection: call resource_orchestrator.analyze_resources()
+    - If List[S3BucketData]: use old path (for AWS API scanning)
+  - Make all tests pass
+  - Verify backward compatibility
+
+#### 6.4 Migrate Security Group Scanner
+
+[ ] Write unit tests for migrated SG scanner
+  - Test file: `tests/unit_tests/scanners/test_sg_scanner_migration.py`
+  - Test `get_collector()` returns ResourceFileSgCollector for file-based scanning
+  - Test `get_collector()` still returns AwsSgCollector for AWS API scanning (unchanged)
+  - Test `analyze_security_groups()` accepts ResourceCollection
+  - Test `analyze_security_groups()` uses resource_orchestrator.analyze_resources()
+  - Test `analyze_security_groups()` formats results with group_name
+  - Test backward compatibility: same vulnerabilities detected
+  - All tests should FAIL initially (TDD)
+
+[ ] Implement migrated SG scanner
+  - File: `src/aws_scanner/scanners/sg_scanner.py`
+  - Update imports: add ResourceFileSgCollector, resource_orchestrator
+  - Update `get_collector()`: return ResourceFileSgCollector when config.file is set
+  - Update `analyze_security_groups()`:
+    - Change signature to accept ResourceCollection OR List[SgData]
+    - If ResourceCollection: call resource_orchestrator.analyze_resources()
+    - If List[SgData]: use old path (for AWS API scanning)
+  - Make all tests pass
+  - Verify backward compatibility
+
+#### 6.5 Verify Migration Complete
+
+[ ] Run full test suite and verify all tests pass
+  - Run: `pytest tests/unit_tests/`
+  - Run: `pytest tests/integration_tests/`
+  - Verify all scanner tests pass (old and new)
+  - Verify backward compatibility: existing file-based scans work
+  - Verify AWS API scanning still works (unchanged)
+
+[ ] Test file-based scanning manually
+  - Test: `cssm iam --policies --file examples/iam/policies/wildcard_admin.json`
+  - Test: `cssm iam --roles --file examples/iam/roles/overprivileged_role.json`
+  - Test: `cssm s3 --file examples/s3/public_s3_bucket.json`
+  - Verify same vulnerabilities detected as before migration
+
+### Phase 7: Deprecation and Cleanup
 
 **Goal**: Remove old data classes and analyzer code that is no longer needed.
 
-[ ] Delete old data classes
-  - Remove `src/aws_scanner/engines/iam_role/iam_role_data.py` (IamRoleData)
-  - Remove `src/aws_scanner/engines/common/iam_policy_data.py` (IamPolicyData)
-  - Remove `src/aws_scanner/engines/s3/s3_bucket_data.py` (S3BucketData)
-  - Remove `src/aws_scanner/engines/sg/sg_data.py` (SgData)
+[ ] Evaluate files for deletion
+  - Checked: All old data classes still used by AWS API collectors
+  - Checked: All old analyzers still used by AWS API scanners
+  - Checked: All old scanner files still used by CLI for AWS scanning
+  - Checked: policy_analyzer_utils.py still used by old analyzers
+  - **Decision**: KEEP all old code - AWS API scanning still requires it
 
-[ ] Delete old analyzer files
-  - Remove old analyzers that used data classes:
-    - Parts of `src/aws_scanner/engines/iam_role/analyzer.py` (keep if AWS API scanning still needs it)
-    - Parts of `src/aws_scanner/engines/iam_policy/analyzer.py`
-    - Parts of `src/aws_scanner/engines/s3/analyzer.py`
-    - Parts of `src/aws_scanner/engines/sg/analyzer.py`
-  - Remove `src/aws_scanner/engines/iam_policy/policy_analyzer_utils.py`
+[ ] Files KEPT (still needed for AWS API scanning):
+  - `src/aws_scanner/engines/iam_role/iam_role_data.py` (IamRoleData)
+  - `src/aws_scanner/engines/common/iam_policy_data.py` (IamPolicyData)
+  - `src/aws_scanner/engines/s3/s3_bucket_data.py` (S3BucketData)
+  - `src/aws_scanner/engines/sg/sg_data.py` (SgData)
+  - `src/aws_scanner/engines/iam_role/analyzer.py` (used by iam_role_scanner)
+  - `src/aws_scanner/engines/iam_policy/analyzer.py` (used by iam_policy_scanner)
+  - `src/aws_scanner/engines/s3/analyzer.py` (used by s3_scanner)
+  - `src/aws_scanner/engines/sg/analyzer.py` (used by sg_scanner)
+  - `src/aws_scanner/engines/iam_policy/policy_analyzer_utils.py` (used by analyzers)
+  - `src/aws_scanner/scanners/iam_role_scanner.py`
+  - `src/aws_scanner/scanners/iam_policy_scanner.py`
+  - `src/aws_scanner/scanners/s3_scanner.py`
+  - `src/aws_scanner/scanners/sg_scanner.py`
 
-[ ] Delete old scanner files (if fully replaced)
-  - Evaluate if these are still needed for AWS API scanning:
-    - `src/aws_scanner/engines/iam_role/iam_role_scanner.py`
-    - `src/aws_scanner/engines/iam_policy/iam_policy_scanner.py`
-    - `src/aws_scanner/engines/s3/s3_scanner.py`
-    - `src/aws_scanner/engines/sg/sg_scanner.py`
-  - If AWS API scanning still uses them, keep them
-  - If file-based scanning has fully migrated to orchestrator, remove them
+[ ] Verify all tests pass
+  - Run full test suite: `pytest` ✓
+  - 341 unit tests passing
+  - 1 integration test passing
+  - No regressions
+  - All tests green
 
-[ ] Clean up imports and verify all tests pass
-  - Remove imports of deleted classes throughout codebase
-  - Update all import statements
-  - Run full test suite: `pytest`
-  - Run integration tests: `pytest tests/integration_tests/`
-  - Verify no regressions
-  - All tests should be green
+**Architecture**: CloudFormation scanning uses new resource-based path (ResourceDefinition + resource analyzers), while AWS API scanning continues using existing data class path. Both coexist without conflicts.
 
 ---
 
@@ -461,13 +584,13 @@ cssm --cloudformation dir:templates/ --output report.json
 
 ---
 
-## Phase 7: Post-Implementation Review & Enhancements
+## Phase 8: Post-Implementation Review & Enhancements
 
 **⚠️ IMPORTANT: HUMAN VERIFICATION REQUIRED BEFORE IMPLEMENTATION**
 
 These items were identified during Phase 4 implementation. Each requires human review to determine if it's a valid concern, working as intended, or needs fixing.
 
-### 7.1 Security Group Egress Rules
+### 8.1 Security Group Egress Rules
 
 **Issue**: SG analyzer only analyzes ingress rules, but spec mentions "IngressRules and EgressRules"
 
@@ -485,7 +608,7 @@ These items were identified during Phase 4 implementation. Each requires human r
   - Similar logic to ingress checks
   - Flag overly broad egress rules
 
-### 7.2 CloudFormation Property Name Aliases
+### 8.2 CloudFormation Property Name Aliases
 
 **Issue**: Analyzers use CloudFormation naming (PascalCase) but collectors may use snake_case
 
@@ -510,7 +633,7 @@ These items were identified during Phase 4 implementation. Each requires human r
 
 [ ] If aliases needed: Add tests validating both naming conventions work
 
-### 7.3 Bucket Policy Analysis Architecture
+### 8.3 Bucket Policy Analysis Architecture
 
 **Issue**: S3 analyzer explicitly does NOT analyze bucket policies (they're separate resources per architecture)
 
@@ -530,7 +653,7 @@ These items were identified during Phase 4 implementation. Each requires human r
   - Inline policy analysis logic
   - Check for public principals, wildcard actions
 
-### 7.4 Error Handling and Data Validation
+### 8.4 Error Handling and Data Validation
 
 **Issue**: Analyzers assume well-formed input, no explicit error handling
 
@@ -550,7 +673,7 @@ These items were identified during Phase 4 implementation. Each requires human r
   - Test with wrong data types
   - Test with None values
 
-### 7.5 Test Coverage Gaps
+### 8.5 Test Coverage Gaps
 
 **Issue**: Some edge cases may not be covered by current tests
 
@@ -563,7 +686,7 @@ These items were identified during Phase 4 implementation. Each requires human r
 
 [ ] Add tests for identified edge cases
 
-### 7.6 CloudFormation-Specific Features
+### 8.6 CloudFormation-Specific Features
 
 **Issue**: CloudFormation has intrinsic functions (Ref, GetAtt, Sub) that may appear in properties
 
