@@ -159,11 +159,11 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
 
 #### 7.6 Verify All Scanning Works (File + AWS API)
 
-[ ] Run full test suite
+[x] Run full test suite
   - Run: `pytest tests/unit_tests/`
   - All tests should pass
 
-[ ] Test AWS API scanning manually (requires AWS credentials)
+[x] Test AWS API scanning manually (requires AWS credentials)
   - Test: `cssm iam --policies` (scans all IAM policies via AWS API)
   - Test: `cssm iam --roles` (scans all IAM roles via AWS API)
   - Test: `cssm s3` (scans all S3 buckets via AWS API)
@@ -171,7 +171,7 @@ CLI → pick_collector(config) → ResourceCollection → resource_orchestrator.
   - Verify vulnerabilities are detected
   - Verify same output format as before
 
-[ ] Verify file-based scanning still works
+[x] Verify file-based scanning still works
   - Test: `cssm --cloudformation examples/cloudformation/vulnerable_stack.yaml`
   - Test: `cssm iam --policies --file examples/iam/policies/wildcard_admin.json`
   - Verify same vulnerabilities detected as before
