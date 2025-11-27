@@ -25,7 +25,7 @@ def analyze_sg_from_resource(resource_def: ResourceDefinition) -> List[Dict[str,
     findings = []
     props = resource_def.properties
 
-    ingress_rules = props.get("SecurityGroupIngress", [])
+    ingress_rules = props.get("SecurityGroupIngress", []) or []
     owner_id = props.get("OwnerId")
 
     for rule in ingress_rules:

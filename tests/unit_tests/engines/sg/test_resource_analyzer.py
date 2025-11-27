@@ -407,3 +407,56 @@ def test_analyze_sg_from_resource_missing_owner_id():
 
     vulnerability_ids = [f["id"] for f in findings]
     assert "SG_OPEN_MANAGEMENT_PORT" in vulnerability_ids
+
+
+def test_analyze_sg_from_resource_empty_ingress_list():
+    resource_def = ResourceDefinition(
+        logical_id="EmptyIngressSG",
+        resource_type="AWS::EC2::SecurityGroup",
+        properties={
+            "GroupId": "sg-empty",
+            "GroupName": "empty-ingress-sg",
+            "SecurityGroupIngress": []
+        }
+    )
+
+    from aws_scanner.engines.sg.resource_analyzer import analyze_sg_from_resource
+
+    findings = analyze_sg_from_resource(resource_def)
+
+    assert len(findings) == 0
+
+
+def test_analyze_sg_from_resource_null_ingress():
+    resource_def = ResourceDefinition(
+        logical_id="NullIngressSG",
+        resource_type="AWS::EC2::SecurityGroup",
+        properties={
+            "GroupId": "sg-null",
+            "GroupName": "null-ingress-sg",
+            "SecurityGroupIngress": None
+        }
+    )
+
+    from aws_scanner.engines.sg.resource_analyzer import analyze_sg_from_resource
+
+    findings = analyze_sg_from_resource(resource_def)
+
+    assert len(findings) == 0
+
+
+def test_analyze_sg_from_resource_missing_ingress():
+    resource_def = ResourceDefinition(
+        logical_id="MissingIngressSG",
+        resource_type="AWS::EC2::SecurityGroup",
+        properties={
+            "GroupId": "sg-missing",
+            "GroupName": "missing-ingress-sg"
+        }
+    )
+
+    from aws_scanner.engines.sg.resource_analyzer import analyze_sg_from_resource
+
+    findings = analyze_sg_from_resource(resource_def)
+
+    assert len(findings) == 0
