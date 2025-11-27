@@ -398,3 +398,68 @@ def test_analyze_s3_bucket_from_resource_partial_pab_config():
     vulnerability_ids = [f["id"] for f in findings]
     assert "S3_PUBLIC_ACL" not in vulnerability_ids
     assert "S3_PUBLIC_POLICY" in vulnerability_ids
+
+
+def test_analyze_s3_bucket_from_resource_null_cors():
+    resource_def = ResourceDefinition(
+        logical_id="NullCorsBucket",
+        resource_type="AWS::S3::Bucket",
+        properties={
+            "BucketName": "null-cors-bucket",
+            "CorsConfiguration": None
+        }
+    )
+
+    from aws_scanner.engines.s3.resource_analyzer import analyze_s3_bucket_from_resource
+
+    findings = analyze_s3_bucket_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    assert "S3_PUBLIC_CORS" not in vulnerability_ids
+
+
+def test_analyze_s3_bucket_from_resource_empty_cors_rules():
+    resource_def = ResourceDefinition(
+        logical_id="EmptyCorsRulesBucket",
+        resource_type="AWS::S3::Bucket",
+        properties={
+            "BucketName": "empty-cors-rules-bucket",
+            "CorsConfiguration": {
+                "CorsRules": []
+            }
+        }
+    )
+
+    from aws_scanner.engines.s3.resource_analyzer import analyze_s3_bucket_from_resource
+
+    findings = analyze_s3_bucket_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    assert "S3_PUBLIC_CORS" not in vulnerability_ids
+
+
+def test_analyze_s3_bucket_from_resource_null_pab():
+    resource_def = ResourceDefinition(
+        logical_id="NullPABBucket",
+        resource_type="AWS::S3::Bucket",
+        properties={
+            "BucketName": "null-pab-bucket",
+            "PublicAccessBlockConfiguration": None,
+            "AclGrants": [
+                {
+                    "Grantee": {
+                        "Type": "Group",
+                        "URI": "http://acs.amazonaws.com/groups/global/AllUsers"
+                    },
+                    "Permission": "READ"
+                }
+            ]
+        }
+    )
+
+    from aws_scanner.engines.s3.resource_analyzer import analyze_s3_bucket_from_resource
+
+    findings = analyze_s3_bucket_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    assert "S3_PUBLIC_ACL" in vulnerability_ids

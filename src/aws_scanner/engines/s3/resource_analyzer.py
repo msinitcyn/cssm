@@ -17,7 +17,7 @@ def analyze_s3_bucket_from_resource(resource_def: ResourceDefinition) -> List[Di
     findings = []
     props = resource_def.properties
 
-    pab = props.get("PublicAccessBlockConfiguration", {})
+    pab = props.get("PublicAccessBlockConfiguration", {}) or {}
 
     if _check_public_acl(props, pab):
         findings.append(
@@ -129,7 +129,7 @@ def _check_public_policy(props: Dict[str, Any], pab: Dict[str, Any]) -> bool:
 
 def _check_cors_vulnerabilities(props: Dict[str, Any], logical_id: str) -> List[Dict[str, Any]]:
     findings = []
-    cors_config = props.get("CorsConfiguration", {})
+    cors_config = props.get("CorsConfiguration", {}) or {}
 
     for rule in cors_config.get("CorsRules", []):
         if _is_cors_rule_overpermissive(rule):
