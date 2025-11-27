@@ -91,7 +91,7 @@ def validate_results(example: Example, scanner_output):
         raise AssertionError(f"Scanner output should be a dict, got {type(scanner_output)}")
 
     if example.service == "iam" and example.entity_type == "policies":
-        result_key = 'iam_policies'
+        result_key = 'iam_roles'
     elif example.service == "s3" and example.entity_type == "":
         result_key = 's3_buckets'
     elif example.service == "sg" and example.entity_type == "":

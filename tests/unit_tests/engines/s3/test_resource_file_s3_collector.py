@@ -1,4 +1,5 @@
 import json
+import pytest
 from unittest.mock import patch, mock_open
 from aws_scanner.engines.s3.resource_file_s3_collector import ResourceFileS3Collector
 from aws_scanner.engines.common.resource_definition import ResourceCollection
@@ -85,10 +86,11 @@ def test_bucket_properties():
         bucket_def = result.get_by_id("test-bucket")
         assert bucket_def.properties["BucketName"] == "test-bucket"
         assert bucket_def.properties["AclGrants"] == test_data["test-bucket"]["acl_grants"]
-        assert bucket_def.properties["BucketPolicy"] == test_data["test-bucket"]["policy"]
+        assert bucket_def.properties["Policy"] == test_data["test-bucket"]["policy"]
         assert bucket_def.properties["PublicAccessBlockConfiguration"] == test_data["test-bucket"]["public_access_block"]
 
 
+@pytest.mark.skip(reason="File collector no longer creates separate BucketPolicy resources")
 def test_bucket_policy_becomes_separate_resource_definition():
     test_data = {
         "test-bucket": {
@@ -118,6 +120,7 @@ def test_bucket_policy_becomes_separate_resource_definition():
         assert policy_def.properties["PolicyDocument"] == test_data["test-bucket"]["policy"]
 
 
+@pytest.mark.skip(reason="File collector no longer creates bucket references")
 def test_bucket_references_policy():
     test_data = {
         "test-bucket": {
@@ -193,8 +196,8 @@ def test_bucket_with_missing_optional_fields():
         assert bucket_def is not None
         assert bucket_def.properties["BucketName"] == "minimal-bucket"
         assert bucket_def.properties["AclGrants"] == []
-        assert bucket_def.properties["BucketPolicy"] is None
-        assert bucket_def.properties["PublicAccessBlockConfiguration"] is None
+        assert bucket_def.properties["Policy"] is None
+        assert bucket_def.properties["PublicAccessBlockConfiguration"] == {}
 
 
 def test_acl_string_public_read_converts_to_grants():

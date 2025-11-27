@@ -112,8 +112,8 @@ def test_security_group_properties():
         assert sg.properties["GroupId"] == "sg-abcdef12"
         assert sg.properties["GroupName"] == "web-servers"
         assert sg.properties["VpcId"] == "vpc-98765432"
-        assert len(sg.properties["IngressRules"]) == 2
-        assert len(sg.properties["EgressRules"]) == 1
+        assert len(sg.properties["SecurityGroupIngress"]) == 2
+        assert len(sg.properties["SecurityGroupEgress"]) == 1
 
 
 def test_retrieve_security_group_by_id():
@@ -184,7 +184,7 @@ def test_multiple_security_groups():
         sg2 = result.get_by_id("sg-second")
         assert sg2 is not None
         assert sg2.properties["GroupName"] == "second-sg"
-        assert len(sg2.properties["IngressRules"]) == 1
+        assert len(sg2.properties["SecurityGroupIngress"]) == 1
 
 
 def test_security_group_with_missing_vpc():
@@ -228,8 +228,8 @@ def test_empty_ingress_and_egress_rules():
         result = collector.collect()
 
         sg = result.get_by_id("sg-12345678")
-        assert sg.properties["IngressRules"] == []
-        assert sg.properties["EgressRules"] == []
+        assert sg.properties["SecurityGroupIngress"] == []
+        assert sg.properties["SecurityGroupEgress"] == []
 
 
 def test_legacy_ingress_permissions_field():
@@ -258,5 +258,5 @@ def test_legacy_ingress_permissions_field():
         result = collector.collect()
 
         sg = result.get_by_id("sg-12345678")
-        assert len(sg.properties["IngressRules"]) == 1
-        assert sg.properties["IngressRules"][0]["protocol"] == "tcp"
+        assert len(sg.properties["SecurityGroupIngress"]) == 1
+        assert sg.properties["SecurityGroupIngress"][0]["IpProtocol"] == "tcp"

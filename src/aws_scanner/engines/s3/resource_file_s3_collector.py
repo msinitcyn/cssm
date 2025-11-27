@@ -18,28 +18,21 @@ class ResourceFileS3Collector:
 
         collection = ResourceCollection()
 
-        for bucket_name, bucket_dict in raw_data.items():
-            bucket_references = []
+        if "bucket_name" in raw_data or "resource_type" in raw_data:
+            buckets_data = {raw_data.get("bucket_name", "UnnamedBucket"): raw_data}
+        else:
+            buckets_data = raw_data
 
+        for bucket_name, bucket_dict in buckets_data.items():
             policy = bucket_dict.get("policy")
-            if policy:
-                policy_logical_id = f"{bucket_name}-bucket-policy"
-                policy_resource = ResourceDefinition(
-                    logical_id=policy_logical_id,
-                    resource_type="AWS::S3::BucketPolicy",
-                    properties={
-                        "PolicyDocument": policy
-                    }
-                )
-                collection.add_resource(policy_resource)
-
-                bucket_references.append(ResourceReference(
-                    target_logical_id=policy_logical_id,
-                    reference_type=ReferenceType.INLINE
-                ))
-
             acl_grants = self._process_acl_field(bucket_dict)
             pab_config = self._get_pab_config(bucket_dict)
+            versioning_config = self._get_versioning_config(bucket_dict)
+            mfa_delete = bucket_dict.get("mfa_delete", bucket_dict.get("MfaDelete"))
+            encryption_config = self._get_encryption_config(bucket_dict)
+            logging_config = self._get_logging_config(bucket_dict)
+            cors_config = self._get_cors_config(bucket_dict)
+            website_config = self._get_website_config(bucket_dict)
 
             bucket_resource = ResourceDefinition(
                 logical_id=bucket_name,
@@ -47,10 +40,15 @@ class ResourceFileS3Collector:
                 properties={
                     "BucketName": bucket_name,
                     "AclGrants": acl_grants,
-                    "BucketPolicy": policy,
-                    "PublicAccessBlockConfiguration": pab_config
-                },
-                references=bucket_references
+                    "Policy": policy,
+                    "PublicAccessBlockConfiguration": pab_config,
+                    "VersioningConfiguration": versioning_config,
+                    "MfaDelete": mfa_delete,
+                    "BucketEncryption": encryption_config,
+                    "LoggingConfiguration": logging_config,
+                    "CorsConfiguration": cors_config,
+                    "WebsiteConfiguration": website_config
+                }
             )
             collection.add_resource(bucket_resource)
 
@@ -67,9 +65,10 @@ class ResourceFileS3Collector:
             return []
 
     def _get_pab_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
-        return (bucket_dict.get("public_access_block") or
-                bucket_dict.get("block_public_access") or
-                bucket_dict.get("pab_config"))
+        result = (bucket_dict.get("public_access_block") or
+                  bucket_dict.get("block_public_access") or
+                  bucket_dict.get("pab_config"))
+        return result if result is not None else {}
 
     def _convert_acl_string_to_grants(self, acl_string: str) -> List[Dict[str, Any]]:
         if acl_string == "public-read":
@@ -101,3 +100,31 @@ class ResourceFileS3Collector:
             return []
         else:
             return []
+
+    def _get_versioning_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
+        versioning = bucket_dict.get("versioning") or bucket_dict.get("VersioningConfiguration")
+        if versioning and isinstance(versioning, dict):
+            if "status" in versioning:
+                return {"Status": versioning["status"]}
+            return versioning
+        return {}
+
+    def _get_encryption_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
+        result = bucket_dict.get("encryption") or bucket_dict.get("BucketEncryption")
+        return result if result is not None else {}
+
+    def _get_logging_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
+        logging = bucket_dict.get("server_access_logging") or bucket_dict.get("LoggingConfiguration")
+        if logging and isinstance(logging, dict):
+            if "enabled" in logging and not logging["enabled"]:
+                return {}
+            return logging
+        return {}
+
+    def _get_cors_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
+        result = bucket_dict.get("cors") or bucket_dict.get("CorsConfiguration")
+        return result if result is not None else {}
+
+    def _get_website_config(self, bucket_dict: Dict[str, Any]) -> Dict[str, Any]:
+        result = bucket_dict.get("website") or bucket_dict.get("WebsiteConfiguration")
+        return result if result is not None else {}
