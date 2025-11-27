@@ -381,3 +381,29 @@ def test_analyze_sg_from_resource_mixed_ipv4_ipv6():
 
     management_findings = [f for f in findings if f["id"] == "SG_OPEN_MANAGEMENT_PORT"]
     assert len(management_findings) == 2
+
+
+def test_analyze_sg_from_resource_missing_owner_id():
+    resource_def = ResourceDefinition(
+        logical_id="NoOwnerIdSG",
+        resource_type="AWS::EC2::SecurityGroup",
+        properties={
+            "GroupId": "sg-noowner",
+            "GroupName": "no-owner-id-sg",
+            "SecurityGroupIngress": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "CidrIp": "0.0.0.0/0"
+                }
+            ]
+        }
+    )
+
+    from aws_scanner.engines.sg.resource_analyzer import analyze_sg_from_resource
+
+    findings = analyze_sg_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    assert "SG_OPEN_MANAGEMENT_PORT" in vulnerability_ids
