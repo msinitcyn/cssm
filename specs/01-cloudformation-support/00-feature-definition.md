@@ -102,7 +102,7 @@ See individual phase files for detailed implementation steps:
 - ✅ [Phase 9: Unify CloudFormation into General Collector Pattern](09-phase-9.md)
 
 **Future Phases:**
-- [ ] [Phase 10: Post-Implementation Review & Enhancements](10-phase-10.md)
+- [ ] [Phase 10: Edge Case Test Coverage](10-phase-10.md)
 
 **References:**
 - [Backward Compatibility Summary](99-backward-compatibility.md)

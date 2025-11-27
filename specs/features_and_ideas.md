@@ -4,6 +4,15 @@ This document contains potential features and development directions that could 
 
 ## Advanced Detection & Analysis
 
+### Security Group Egress Rule Analysis
+**Currently**: Only ingress (incoming) rules are analyzed
+**Enhancement**: Analyze egress (outgoing) rules for security issues
+- Detect overly permissive egress (0.0.0.0/0 on all ports)
+- Flag unrestricted database/management port access
+- Data exfiltration risk detection
+- Unauthorized outbound connection monitoring
+**Priority**: Medium - egress rules can be security-relevant but ingress is higher risk
+
 ### Detect overbroad "Resource": "*" in sensitive actions
 Flag policies where sensitive actions (like s3:PutObject, iam:PassRole, sts:AssumeRole, etc.) are granted on Resource: "*". These are common misconfigurations that lead to data leaks or privilege escalation. Mark as high risk.
 
@@ -22,6 +31,32 @@ Track changes in scanned resources over time. Example: "bucket X was private, no
 ### Optional ignore-list
 Support a config file like `known_public_buckets.json` to suppress expected findings in output. Prevent noise.
 
+## Code Quality & Backward Compatibility
+
+### Property Name Alias Support
+**Issue**: Analyzers expect CloudFormation-style PascalCase names, but collectors may use snake_case
+**Enhancement**: Support multiple property name variants for backward compatibility
+- S3 examples:
+  - `PublicAccessBlockConfiguration` vs `public_access_block` / `pab_config` / `block_public_access`
+  - `BucketEncryption` vs `encryption`
+  - `VersioningConfiguration` vs `versioning`
+  - `LoggingConfiguration` vs `server_access_logging`
+- Security Group examples:
+  - `SecurityGroupIngress` vs `ingress_rules` / `ingress_permissions`
+  - `SecurityGroupEgress` vs `egress_rules`
+**Trade-off**: More flexible vs more complex code
+**Decision needed**: Add alias support or standardize on CloudFormation names only
+
+### Defensive Input Validation
+**Currently**: Analyzers trust collector output, minimal error handling
+**Enhancement**: Add defensive validation in analyzers
+- Validate `resource_def.properties` is a dict
+- Validate expected types (lists, dicts, strings)
+- Handle malformed data gracefully
+- Add tests for edge cases (missing properties, wrong types, None values)
+**Trade-off**: More robust vs trusting collectors to provide clean data
+**Question**: Do collectors guarantee clean data structures, or should analyzers validate?
+
 ## Infrastructure as Code Support
 
 ### Terraform File Support
@@ -31,10 +66,16 @@ Support a config file like `known_public_buckets.json` to suppress expected find
 - Detect misconfigurations in Terraform resource definitions
 
 ### CloudFormation Support
-- Parse `.yaml/.yml` CloudFormation templates
-- Parse `.json` CloudFormation templates
+- Parse `.yaml/.yml` CloudFormation templates ✅ (implemented)
+- Parse `.json` CloudFormation templates ✅ (implemented)
 - Template parameter analysis
 - Stack-level risk assessment
+- **CloudFormation Intrinsic Function Handling**
+  - Detect intrinsic functions (Ref, GetAtt, Sub, Join, etc.) in security-sensitive fields
+  - Decision needed: Skip analysis, analyze literally, or attempt resolution
+  - Example: `CidrIp: !Ref AllowedCIDR` - should we flag as unknown or try to resolve?
+  - Affects: Security Group rules, IAM policies, S3 bucket configurations
+  - Risk: Missing vulnerabilities if we skip, false positives if we don't resolve
 
 ### AWS CDK Support
 - TypeScript/JavaScript CDK analysis
