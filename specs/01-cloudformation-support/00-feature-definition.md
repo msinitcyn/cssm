@@ -150,9 +150,10 @@ Each scanning mode has its own collector that returns `ResourceCollection`:
 
 ### Statistics
 
-- **192 unit tests** passing
+- **193 tests passing** (192 unit tests + 1 integration test)
 - **42 old files removed** in Phase 8 cleanup
 - **9 collector classes** (5 file-based + 4 AWS API)
 - **4 resource analyzers** (IAM Policy, IAM Role, S3, Security Group)
 - **1 unified orchestrator** for all resource types
 - **13 new edge case tests** added in Phase 10
+- **Integration test validates** end-to-end CloudFormation scanning

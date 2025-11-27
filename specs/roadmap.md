@@ -47,7 +47,7 @@
 [x] VSCode extension (MVP)<br>
 
 ## Milestone 9: High Impact Foundation
-[ ] CloudFormation support (Scanner)<br>
+[x] CloudFormation support (Scanner)<br>
 [ ] Release pipeline automation (Extension)<br>
 [ ] Auto-detect configuration type (Extension)<br>
 
