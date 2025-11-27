@@ -343,3 +343,68 @@ def test_analyze_iam_policy_from_resource_deny_statement_ignored():
     findings = analyze_iam_policy_from_resource(resource_def)
 
     assert len(findings) == 0
+
+
+def test_analyze_iam_policy_from_resource_empty_statements():
+    policy_document = {
+        "Version": "2012-10-17",
+        "Statement": []
+    }
+
+    resource_def = ResourceDefinition(
+        logical_id="EmptyStatementsPolicy",
+        resource_type="AWS::IAM::Policy",
+        properties={
+            "PolicyName": "EmptyStatementsPolicy",
+            "PolicyDocument": policy_document
+        }
+    )
+
+    from aws_scanner.engines.iam_policy.resource_analyzer import analyze_iam_policy_from_resource
+
+    findings = analyze_iam_policy_from_resource(resource_def)
+
+    assert len(findings) == 0
+
+
+def test_analyze_iam_policy_from_resource_null_statements():
+    policy_document = {
+        "Version": "2012-10-17",
+        "Statement": None
+    }
+
+    resource_def = ResourceDefinition(
+        logical_id="NullStatementsPolicy",
+        resource_type="AWS::IAM::Policy",
+        properties={
+            "PolicyName": "NullStatementsPolicy",
+            "PolicyDocument": policy_document
+        }
+    )
+
+    from aws_scanner.engines.iam_policy.resource_analyzer import analyze_iam_policy_from_resource
+
+    findings = analyze_iam_policy_from_resource(resource_def)
+
+    assert len(findings) == 0
+
+
+def test_analyze_iam_policy_from_resource_missing_statements():
+    policy_document = {
+        "Version": "2012-10-17"
+    }
+
+    resource_def = ResourceDefinition(
+        logical_id="MissingStatementsPolicy",
+        resource_type="AWS::IAM::Policy",
+        properties={
+            "PolicyName": "MissingStatementsPolicy",
+            "PolicyDocument": policy_document
+        }
+    )
+
+    from aws_scanner.engines.iam_policy.resource_analyzer import analyze_iam_policy_from_resource
+
+    findings = analyze_iam_policy_from_resource(resource_def)
+
+    assert len(findings) == 0

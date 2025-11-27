@@ -169,7 +169,7 @@ def analyze_iam_policy_from_resource(resource_def: ResourceDefinition) -> List[D
     findings = []
 
     policy_document = resource_def.properties.get("PolicyDocument", {})
-    statements = policy_document.get("Statement", [])
+    statements = policy_document.get("Statement", []) or []
 
     if isinstance(statements, dict):
         statements = [statements]
