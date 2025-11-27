@@ -356,3 +356,45 @@ def test_analyze_s3_bucket_from_resource_multiple_vulnerabilities():
     assert "S3_NO_ENCRYPTION" in vulnerability_ids
     assert "S3_NO_ACCESS_LOGGING" in vulnerability_ids
     assert "S3_MFA_DELETE_DISABLED" in vulnerability_ids
+
+
+def test_analyze_s3_bucket_from_resource_partial_pab_config():
+    resource_def = ResourceDefinition(
+        logical_id="PartialPABBucket",
+        resource_type="AWS::S3::Bucket",
+        properties={
+            "BucketName": "partial-pab-bucket",
+            "PublicAccessBlockConfiguration": {
+                "BlockPublicAcls": True,
+                "IgnorePublicAcls": True
+            },
+            "AclGrants": [
+                {
+                    "Grantee": {
+                        "Type": "Group",
+                        "URI": "http://acs.amazonaws.com/groups/global/AllUsers"
+                    },
+                    "Permission": "READ"
+                }
+            ],
+            "Policy": {
+                "Version": "2012-10-17",
+                "Statement": [
+                    {
+                        "Effect": "Allow",
+                        "Principal": "*",
+                        "Action": "s3:GetObject",
+                        "Resource": "arn:aws:s3:::partial-pab-bucket/*"
+                    }
+                ]
+            }
+        }
+    )
+
+    from aws_scanner.engines.s3.resource_analyzer import analyze_s3_bucket_from_resource
+
+    findings = analyze_s3_bucket_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    assert "S3_PUBLIC_ACL" not in vulnerability_ids
+    assert "S3_PUBLIC_POLICY" in vulnerability_ids
