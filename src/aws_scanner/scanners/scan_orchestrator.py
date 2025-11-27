@@ -1,4 +1,4 @@
-from aws_scanner.engines.cloudformation.cloudformation_scanner import scan_cloudformation_template
+from aws_scanner.engines.cloudformation.resource_file_cloudformation_collector import ResourceFileCloudFormationCollector
 from aws_scanner.engines.iam_policy.resource_file_iam_policy_collector import ResourceFileIamPolicyCollector
 from aws_scanner.engines.iam_policy.resource_aws_iam_policy_collector import ResourceAwsIamPolicyCollector
 from aws_scanner.engines.iam_role.resource_file_iam_role_collector import ResourceFileIamRoleCollector
@@ -15,6 +15,9 @@ from aws_scanner.core.configs import RunConfig
 
 
 def _get_collector(config: RunConfig, boto3_wrapper):
+    if config.cloudformation:
+        return ResourceFileCloudFormationCollector(config.cloudformation.file)
+
     if config.iam_policy:
         if config.iam_policy.file:
             return ResourceFileIamPolicyCollector(config.iam_policy.file)
@@ -41,13 +44,10 @@ def _get_collector(config: RunConfig, boto3_wrapper):
 
 
 def run_scan(run_config: RunConfig):
-    if run_config.cloudformation:
-        results = scan_cloudformation_template(run_config.cloudformation.file)
-    else:
-        boto3_wrapper = Boto3Wrapper()
-        collector = _get_collector(run_config, boto3_wrapper)
-        collection = collector.collect()
-        findings = resource_orchestrator.analyze_resources(collection)
-        results = format_results(findings)
+    boto3_wrapper = Boto3Wrapper()
+    collector = _get_collector(run_config, boto3_wrapper)
+    collection = collector.collect()
+    findings = resource_orchestrator.analyze_resources(collection)
+    results = format_results(findings)
 
     generate_report(run_config.report, results)
