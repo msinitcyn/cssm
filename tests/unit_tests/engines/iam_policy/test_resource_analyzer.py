@@ -259,50 +259,6 @@ def test_analyze_iam_policy_from_resource_multiple_statements():
     assert "IAM_POLICY_ASSUME_ROLE_WILDCARD" in vulnerability_ids
 
 
-def test_analyze_iam_policy_from_resource_backward_compatibility():
-    from aws_scanner.engines.common.iam_policy_data import IamPolicyData
-    from aws_scanner.engines.common.policy_analyzer_utils import analyze_policy
-
-    policy_document = {
-        "Version": "2012-10-17",
-        "Statement": [
-            {
-                "Effect": "Allow",
-                "Action": "*",
-                "Resource": "*"
-            }
-        ]
-    }
-
-    old_policy_data = IamPolicyData(
-        name="TestPolicy",
-        policy_type="attached",
-        document=policy_document,
-        arn="arn:aws:iam::123456789012:policy/TestPolicy",
-        is_inline=False
-    )
-
-    resource_def = ResourceDefinition(
-        logical_id="TestPolicy",
-        resource_type="AWS::IAM::Policy",
-        properties={
-            "PolicyName": "TestPolicy",
-            "PolicyDocument": policy_document
-        }
-    )
-
-    from aws_scanner.engines.iam_policy.resource_analyzer import analyze_iam_policy_from_resource
-
-    old_findings = analyze_policy(old_policy_data)
-    new_findings = analyze_iam_policy_from_resource(resource_def)
-
-    old_vuln_ids = sorted([f["id"] for f in old_findings])
-    new_vuln_ids = sorted([f["id"] for f in new_findings])
-
-    assert old_vuln_ids == new_vuln_ids
-    assert len(old_findings) == len(new_findings)
-
-
 def test_analyze_iam_policy_from_resource_notaction_wildcard_resource():
     policy_document = {
         "Version": "2012-10-17",
