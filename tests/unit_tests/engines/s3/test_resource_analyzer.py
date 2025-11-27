@@ -114,6 +114,50 @@ def test_analyze_s3_bucket_from_resource_public_cors():
     assert "S3_PUBLIC_CORS" in vulnerability_ids
 
 
+def test_analyze_s3_bucket_from_resource_multiple_cors_rules():
+    resource_def = ResourceDefinition(
+        logical_id="MultipleCorsBucket",
+        resource_type="AWS::S3::Bucket",
+        properties={
+            "BucketName": "multiple-cors-bucket",
+            "CorsConfiguration": {
+                "CorsRules": [
+                    {
+                        "AllowedOrigins": ["https://example.com"],
+                        "AllowedMethods": ["GET"],
+                        "AllowedHeaders": ["Authorization"]
+                    },
+                    {
+                        "AllowedOrigins": ["*"],
+                        "AllowedMethods": ["GET", "POST"],
+                        "AllowedHeaders": ["*"]
+                    },
+                    {
+                        "AllowedOrigins": ["https://another-example.com"],
+                        "AllowedMethods": ["PUT"],
+                        "AllowedHeaders": ["Content-Type"]
+                    },
+                    {
+                        "AllowedOrigins": ["https://trusted.com"],
+                        "AllowedMethods": ["*"],
+                        "AllowedHeaders": ["*"]
+                    }
+                ]
+            }
+        }
+    )
+
+    from aws_scanner.engines.s3.resource_analyzer import analyze_s3_bucket_from_resource
+
+    findings = analyze_s3_bucket_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    cors_findings = [f for f in findings if f["id"] == "S3_PUBLIC_CORS"]
+
+    assert "S3_PUBLIC_CORS" in vulnerability_ids
+    assert len(cors_findings) == 2
+
+
 def test_analyze_s3_bucket_from_resource_website_hosting():
     resource_def = ResourceDefinition(
         logical_id="WebsiteBucket",
