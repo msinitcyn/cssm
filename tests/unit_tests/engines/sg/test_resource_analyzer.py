@@ -327,3 +327,57 @@ def test_analyze_sg_from_resource_open_http_port():
 
     vulnerability_ids = [f["id"] for f in findings]
     assert "SG_OPEN_PORT" in vulnerability_ids
+
+
+def test_analyze_sg_from_resource_mixed_ipv4_ipv6():
+    resource_def = ResourceDefinition(
+        logical_id="MixedIPSG",
+        resource_type="AWS::EC2::SecurityGroup",
+        properties={
+            "GroupId": "sg-mixedip",
+            "GroupName": "mixed-ip-sg",
+            "SecurityGroupIngress": [
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 443,
+                    "ToPort": 443,
+                    "CidrIp": "10.0.0.0/8"
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 22,
+                    "ToPort": 22,
+                    "CidrIp": "0.0.0.0/0"
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 3389,
+                    "ToPort": 3389,
+                    "CidrIpv6": "::/0"
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 80,
+                    "ToPort": 80,
+                    "CidrIpv6": "2001:db8::/32"
+                },
+                {
+                    "IpProtocol": "tcp",
+                    "FromPort": 3306,
+                    "ToPort": 3306,
+                    "CidrIp": "0.0.0.0/0"
+                }
+            ]
+        }
+    )
+
+    from aws_scanner.engines.sg.resource_analyzer import analyze_sg_from_resource
+
+    findings = analyze_sg_from_resource(resource_def)
+
+    vulnerability_ids = [f["id"] for f in findings]
+    assert "SG_OPEN_MANAGEMENT_PORT" in vulnerability_ids
+    assert "SG_OPEN_DATABASE_PORT" in vulnerability_ids
+
+    management_findings = [f for f in findings if f["id"] == "SG_OPEN_MANAGEMENT_PORT"]
+    assert len(management_findings) == 2
