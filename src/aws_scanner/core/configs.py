@@ -21,6 +21,10 @@ class SgConfig:
     file: Optional[str] = None
 
 @dataclass
+class CloudFormationConfig:
+    file: str
+
+@dataclass
 class ReportConfig:
     path: Path = Path("output/report.json")
     html: bool = False
@@ -31,4 +35,5 @@ class RunConfig:
     iam_role: IamRoleConfig | None
     iam_policy: IamPolicyConfig | None
     sg: SgConfig | None
+    cloudformation: CloudFormationConfig | None
     report: ReportConfig

@@ -21,7 +21,6 @@ class VulnerabilityTemplate:
         }
 
 VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
-    # IAM Policy Vulnerabilities
     "IAM_POLICY_WILDCARD_ALL": VulnerabilityTemplate(
         id="IAM_POLICY_WILDCARD_ALL",
         description='Too permissive: Action="*", Resource="*"',
@@ -85,7 +84,6 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         remediation="Add restrictive conditions such as aws:SourceIp, aws:MultiFactorAuthPresent, or aws:RequestedRegion to limit access."
     ),
 
-    # IAM Role Vulnerabilities
     "IAM_ROLE_BROAD_ASSUME_ROLE": VulnerabilityTemplate(
         id="IAM_ROLE_BROAD_ASSUME_ROLE",
         description="IAM Role trust policy allows sts:AssumeRole to Principal='*' or without restrictive conditions — critical lateral movement risk",
@@ -94,7 +92,6 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         remediation="Restrict Principal in trust policy and add Condition to limit AssumeRole access."
     ),
 
-    # IAM User Vulnerabilities
     "IAM_USER_NO_MFA_HIGH_PRIVILEGE": VulnerabilityTemplate(
         id="IAM_USER_NO_MFA_HIGH_PRIVILEGE",
         description="High-privilege IAM user does not have MFA enabled — critical account protection missing",
@@ -138,7 +135,6 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         remediation="Disable or delete inactive user accounts and review if access is still needed."
     ),
 
-    # Root User Vulnerabilities
     "IAM_ROOT_USER_ACCESS_KEYS": VulnerabilityTemplate(
         id="IAM_ROOT_USER_ACCESS_KEYS",
         description="Root user has active access keys — creates unnecessary security risk and violates best practices",
@@ -154,7 +150,6 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         remediation="Enable MFA for root user account immediately."
     ),
 
-    # S3 Vulnerabilities
     "S3_PUBLIC_ACL": VulnerabilityTemplate(
         id="S3_PUBLIC_ACL",
         description="S3 bucket is publicly accessible via ACL.",
@@ -191,7 +186,6 @@ VULNERABILITIES: Dict[str, VulnerabilityTemplate] = {
         remediation="Restrict website configuration or disable if not needed."
     ),
 
-    # Security Group Vulnerabilities
     "SG_OPEN_PORT": VulnerabilityTemplate(
         id="SG_OPEN_PORT",
         description="Security Group allows access to dangerous or all ports from open CIDR",
