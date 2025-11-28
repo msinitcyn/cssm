@@ -1,4 +1,3 @@
-import pytest
 from aws_scanner.engines.common.resource_definition import ResourceDefinition
 
 

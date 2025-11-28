@@ -2,9 +2,7 @@ import json
 from typing import List, Dict, Any
 from aws_scanner.engines.common.resource_definition import (
     ResourceCollection,
-    ResourceDefinition,
-    ResourceReference,
-    ReferenceType
+    ResourceDefinition
 )
 
 

@@ -1,4 +1,3 @@
-import pytest
 from aws_scanner.core.result_formatter import format_results
 
 

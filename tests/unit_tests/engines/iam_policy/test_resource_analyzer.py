@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import patch, MagicMock
+from unittest.mock import patch
 from aws_scanner.engines.common.resource_definition import ResourceDefinition
 
 

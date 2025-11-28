@@ -1,8 +1,7 @@
-import pytest
 import json
 from unittest.mock import mock_open, patch
 from aws_scanner.engines.iam_role.resource_file_iam_role_collector import ResourceFileIamRoleCollector
-from aws_scanner.engines.common.resource_definition import ResourceCollection, ResourceDefinition
+from aws_scanner.engines.common.resource_definition import ResourceCollection
 
 
 def test_collector_returns_resource_collection():

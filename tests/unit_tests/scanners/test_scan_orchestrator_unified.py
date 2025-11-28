@@ -1,5 +1,4 @@
-import pytest
-from unittest.mock import Mock, patch, call
+from unittest.mock import Mock, patch
 from pathlib import Path
 
 from aws_scanner.scanners.scan_orchestrator import run_scan

@@ -1,4 +1,3 @@
-from pathlib import Path
 import pytest
 from aws_scanner.engines.cloudformation.resource_file_cloudformation_collector import ResourceFileCloudFormationCollector
 from aws_scanner.engines.common.resource_definition import ResourceCollection

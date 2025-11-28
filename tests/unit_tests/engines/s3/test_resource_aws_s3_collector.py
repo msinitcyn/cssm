@@ -1,6 +1,5 @@
 from unittest.mock import MagicMock
 import botocore.exceptions
-import pytest
 from aws_scanner.engines.s3.resource_aws_s3_collector import ResourceAwsS3Collector
 from aws_scanner.engines.common.resource_definition import ResourceCollection
 from aws_scanner.core.boto3_wrapper import Boto3Wrapper

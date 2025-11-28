@@ -1,5 +1,4 @@
 from pathlib import Path
-from typing import Dict
 
 from aws_scanner.engines.cloudformation.reader import CloudFormationReader
 from aws_scanner.engines.common.resource_definition import ResourceCollection, ResourceDefinition

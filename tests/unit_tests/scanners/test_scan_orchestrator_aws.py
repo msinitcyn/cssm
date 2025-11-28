@@ -165,7 +165,7 @@ def test_boto3_wrapper_passed_to_collectors():
          patch("aws_scanner.scanners.scan_orchestrator.ResourceAwsIamPolicyCollector") as mock_collector, \
          patch("aws_scanner.scanners.scan_orchestrator.resource_orchestrator.analyze_resources") as mock_analyze, \
          patch("aws_scanner.scanners.scan_orchestrator.format_results") as mock_format, \
-         patch("aws_scanner.scanners.scan_orchestrator.generate_report") as mock_report:
+         patch("aws_scanner.scanners.scan_orchestrator.generate_report"):
 
         mock_boto3_wrapper_instance = MagicMock()
         mock_boto3_wrapper_class.return_value = mock_boto3_wrapper_instance
