@@ -3,8 +3,6 @@
 **Feature Branch**: `feature/cloudformation-support`
 **Milestone**: 10
 **Status**: PHASE 10 COMPLETE - Edge Case Test Coverage Complete
-**Created**: 2025-09-29
-**Updated**: 2025-11-27
 
 ---
 
