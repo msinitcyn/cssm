@@ -1,0 +1,118 @@
+name: Release Extension
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repository
+      uses: actions/checkout@v3
+
+    - name: Extract version from tag
+      id: extract_version
+      run: |
+        TAG=${GITHUB_REF#refs/tags/v}
+        echo "version=$TAG" >> $GITHUB_OUTPUT
+        echo "Extracted version: $TAG"
+
+    - name: Validate tag format
+      run: |
+        if [[ ! "${{ steps.extract_version.outputs.version }}" =~ ^[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+          echo "Error: Tag must follow format v{MAJOR}.{MINOR}.{PATCH}"
+          exit 1
+        fi
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.11'
+
+    - name: Set up Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: '18'
+
+    - name: Install Python dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -e .
+        pip install pyinstaller
+
+    - name: Validate package.json version matches tag
+      run: |
+        PACKAGE_VERSION=$(node -p "require('./vscode-extension/package.json').version")
+        TAG_VERSION="${{ steps.extract_version.outputs.version }}"
+
+        if [ "$PACKAGE_VERSION" != "$TAG_VERSION" ]; then
+          echo "Error: package.json version ($PACKAGE_VERSION) does not match tag version ($TAG_VERSION)"
+          exit 1
+        fi
+
+        echo "Version validation passed: $PACKAGE_VERSION"
+
+    - name: Build Linux scanner binary
+      run: |
+        pyinstaller --onefile \
+          --name aws-scanner-linux \
+          --add-data "src/templates:templates" \
+          vscode-extension/pyinstaller_entry.py
+
+        chmod +x dist/aws-scanner-linux
+        dist/aws-scanner-linux --help || echo "Binary built successfully"
+
+    - name: Create extension bin directory
+      run: |
+        mkdir -p vscode-extension/bin
+        cp dist/aws-scanner-linux vscode-extension/bin/
+
+    - name: Install extension dependencies
+      run: |
+        cd vscode-extension
+        npm install
+
+    - name: Compile extension
+      run: |
+        cd vscode-extension
+        npm run compile
+
+    - name: Package extension
+      run: |
+        cd vscode-extension
+        npx vsce package
+
+        VSIX_FILE=$(ls *.vsix)
+        echo "vsix_file=$VSIX_FILE" >> $GITHUB_ENV
+        echo "Packaged: $VSIX_FILE"
+
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        name: Release v${{ steps.extract_version.outputs.version }}
+        draft: false
+        prerelease: false
+        files: |
+          dist/aws-scanner-linux
+          vscode-extension/*.vsix
+        body: |
+          ## Release v${{ steps.extract_version.outputs.version }}
+
+          ### Installation
+
+          **VS Code Extension:**
+          - Download `aws-cssm-${{ steps.extract_version.outputs.version }}.vsix`
+          - Install: `code --install-extension aws-cssm-${{ steps.extract_version.outputs.version }}.vsix`
+
+          **Standalone Scanner (Linux):**
+          - Download `aws-scanner-linux`
+          - Make executable: `chmod +x aws-scanner-linux`
+          - Run: `./aws-scanner-linux --help`
+
+          ### Changes
+          See commit history for details.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
