@@ -2,7 +2,7 @@
   "name": "aws-cssm",
   "displayName": "AWS Cloud Security Scanner for Misconfigurations",
   "description": "Scan AWS configurations for security misconfigurations",
-  "version": "0.1.0",
+  "version": "0.1.1",
   "publisher": "msin",
   "repository": {
     "type": "git", 

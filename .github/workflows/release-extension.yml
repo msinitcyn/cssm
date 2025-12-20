@@ -8,6 +8,8 @@ on:
 jobs:
   release:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
 
     steps:
     - name: Checkout repository
@@ -35,7 +37,7 @@ jobs:
     - name: Set up Node.js
       uses: actions/setup-node@v3
       with:
-        node-version: '18'
+        node-version: '20'
 
     - name: Install Python dependencies
       run: |
@@ -88,6 +90,11 @@ jobs:
         VSIX_FILE=$(ls *.vsix)
         echo "vsix_file=$VSIX_FILE" >> $GITHUB_ENV
         echo "Packaged: $VSIX_FILE"
+
+    - name: Publish to VS Code Marketplace
+      run: |
+        cd vscode-extension
+        npx vsce publish -p ${{ secrets.VSCE_PAT }}
 
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
