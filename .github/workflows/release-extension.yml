@@ -29,6 +29,19 @@ jobs:
           exit 1
         fi
 
+    - name: Validate version increment
+      run: |
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "v0.0.0")
+        LATEST_VERSION=${LATEST_TAG#v}
+        NEW_VERSION="${{ steps.extract_version.outputs.version }}"
+
+        if [ "$NEW_VERSION" == "$LATEST_VERSION" ]; then
+          echo "Error: Version $NEW_VERSION already exists"
+          exit 1
+        fi
+
+        echo "Version check passed: $LATEST_VERSION -> $NEW_VERSION"
+
     - name: Set up Python
       uses: actions/setup-python@v4
       with:
@@ -44,6 +57,15 @@ jobs:
         python -m pip install --upgrade pip
         pip install -e .
         pip install pyinstaller
+        pip install ruff pytest
+
+    - name: Run linting
+      run: |
+        ruff check .
+
+    - name: Run tests
+      run: |
+        pytest tests/
 
     - name: Validate package.json version matches tag
       run: |
@@ -96,6 +118,20 @@ jobs:
         cd vscode-extension
         npx vsce publish -p ${{ secrets.VSCE_PAT }}
 
+    - name: Generate changelog
+      id: changelog
+      run: |
+        LATEST_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+        if [ -z "$LATEST_TAG" ]; then
+          COMMITS=$(git log --pretty=format:"- %s (%h)")
+        else
+          COMMITS=$(git log ${LATEST_TAG}..HEAD --pretty=format:"- %s (%h)")
+        fi
+
+        echo "changelog<<EOF" >> $GITHUB_OUTPUT
+        echo "$COMMITS" >> $GITHUB_OUTPUT
+        echo "EOF" >> $GITHUB_OUTPUT
+
     - name: Create GitHub Release
       uses: softprops/action-gh-release@v1
       with:
@@ -120,6 +156,6 @@ jobs:
           - Run: `./aws-scanner-linux --help`
 
           ### Changes
-          See commit history for details.
+          ${{ steps.changelog.outputs.changelog }}
       env:
         GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
