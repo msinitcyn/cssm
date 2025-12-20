@@ -6,17 +6,17 @@
 
 ## Checklist
 
-[ ] Create Azure DevOps account (https://dev.azure.com)
-[ ] Generate Personal Access Token
+[x] Create Azure DevOps account (https://dev.azure.com)
+[x] Generate Personal Access Token
   - Navigate to: https://dev.azure.com/[org]/_usersSettings/tokens
   - Scope: **Marketplace (Publish)** (required)
   - Expiration: 1 year recommended
   - Copy token (shown only once)
-[ ] Add token to GitHub Secrets
+[x] Add token to GitHub Secrets
   - Repo settings → Secrets → Actions → New secret
   - Name: `VSCE_PAT`
   - Value: [paste token]
-[ ] Update workflow - add marketplace publishing step:
+[x] Update workflow - add marketplace publishing step:
   ```yaml
   - name: Publish to VS Code Marketplace
     run: |
