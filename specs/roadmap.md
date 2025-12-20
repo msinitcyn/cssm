@@ -48,6 +48,7 @@
 
 ## Milestone 9: High Impact Foundation
 [x] CloudFormation support (Scanner)<br>
+[ ] Scanner & Extension reliability fixes (Both)<br>
 [ ] Release pipeline automation (Extension)<br>
 [ ] Auto-detect configuration type (Extension)<br>
 
@@ -151,6 +152,9 @@ Automatically post inline comments on PRs that introduce insecure IAM policies o
 
 ### CloudFormation support
 Parse and analyze CloudFormation templates (YAML/JSON) for security misconfigurations in AWS resource definitions.
+
+### Scanner & Extension reliability fixes
+Fix scanner error handling and extension compatibility issues. Ensure graceful error messages, proper file format handling, and extension works with all example files.
 
 ### Release pipeline automation
 Set up automated build and publishing pipeline for the VSCode extension using GitHub Actions and marketplace integration.
