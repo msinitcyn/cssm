@@ -1,9 +1,5 @@
 # Phase 4: Multi-Platform Support (Optional)
 
-**Status**: Not started
-
----
-
 ## Goal
 
 Build scanner binaries for Windows and macOS in addition to Linux.

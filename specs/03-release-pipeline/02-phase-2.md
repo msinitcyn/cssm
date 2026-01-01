@@ -1,9 +1,5 @@
 # Phase 2: Marketplace Publishing
 
-**Status**: Complete
-
----
-
 ## Checklist
 
 [x] Create Azure DevOps account (https://dev.azure.com)

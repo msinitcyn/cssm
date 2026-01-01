@@ -1,9 +1,5 @@
 # Release Pipeline Automation
 
-**Status**: Phase 1 Complete → Next: Phase 2
-
----
-
 ## Goal
 
 Automate extension releases: one tag push → published to marketplace in ~10 minutes.

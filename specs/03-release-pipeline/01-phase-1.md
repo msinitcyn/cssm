@@ -1,9 +1,5 @@
 # Phase 1: Basic Release Workflow
 
-**Status**: ✅ Complete
-
----
-
 ## Implementation Checklist
 
 [x] Add `@vscode/vsce@^3.2.1` to `vscode-extension/package.json` devDependencies
