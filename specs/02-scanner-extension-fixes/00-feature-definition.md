@@ -1,69 +1,45 @@
-# Feature: Scanner & Extension Reliability Fixes
+# Scanner & Extension Reliability Fixes
 
-**Feature ID**: 02
-**Status**: Not started
-**Milestone**: 9 - High Impact Foundation
+## Issues to Fix
 
----
+### Scanner
 
-## Overview
+1. **CloudFormation AWS::S3::BucketPolicy Support**
+   - Error: "Unknown resource type: AWS::S3::BucketPolicy"
+   - File `examples/cloudformation/vulnerable_stack.yaml` fails
 
-Fix critical reliability issues in scanner error handling and VSCode extension to ensure production readiness before release automation.
+2. **Error Messages for Malformed Files**
+   - Cryptic errors on malformed JSON/YAML
+   - Need clear messages with file path and problem description
 
----
+### Extension
 
-## Problems
+1. **CloudFormation Support Missing**
+   - No command to scan CloudFormation .yaml/.yml files
 
-1. Scanner crashes with unhelpful stack traces when wrong file format provided
-2. Extension "Scan IAM Policy" returns no results for valid policy files
-3. Extension lacks CloudFormation scanning support
-4. Unknown if extension works with all example files
+2. **CloudFormation Result Display**
+   - Extension expects specific keys (iam_policies, s3_buckets, etc.)
+   - CloudFormation returns mixed resource types
 
----
+## Expected Behavior
 
-## Goals
+### Scanner CLI
 
-- Graceful error messages instead of crashes
-- Extension correctly handles all file formats in examples/
-- CloudFormation scanning available in extension
-- All example files validated with extension
+BucketPolicy in CloudFormation templates:
+```bash
+aws-scanner --cloudformation examples/cloudformation/vulnerable_stack.yaml
+# Scans successfully, detects bucket policy vulnerabilities
+```
 
----
+Clear error messages:
+```bash
+aws-scanner iam --file malformed.json
+# Error: Invalid JSON in file 'malformed.json' at line 3, position 42
+```
 
-## Phases
+### Extension
 
-**Phase 1: Scanner Error Handling**
-- Detect wrong file format early
-- Return helpful error messages
-- No stack traces for user errors
+New command available:
+- **Scan CloudFormation Template**
 
-**Phase 2: Extension File Validation**
-- Validate file format before scanning
-- Clear error messages in extension UI
-- Fix "no items found" issue
-
-**Phase 3: CloudFormation Extension Support**
-- Add "Scan CloudFormation" command
-- Handle both YAML and JSON templates
-
-**Phase 4: Example Validation**
-- Test extension against all examples/
-- Document which command works with which file type
-- Fix any discovered issues
-
----
-
-## Success Criteria
-
-- [ ] Scanner returns helpful errors for format mismatches
-- [ ] Extension shows clear error when wrong command used
-- [ ] All file types in examples/ can be scanned via extension
-- [ ] CloudFormation scanning works in extension
-- [ ] No crashes or stack traces for user errors
-
----
-
-## Backward Compatibility
-
-Maintains compatibility with supported-features.md §3 (Input File Formats).
-No changes to file formats or CLI interface.
+CloudFormation results show all resource types found in template with their findings.
