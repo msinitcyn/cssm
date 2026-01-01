@@ -248,6 +248,6 @@ def test_cloudformation_with_bucket_policy_produces_no_warnings():
     collection = collector.collect()
 
     with patch('aws_scanner.core.resource_orchestrator.logger') as mock_logger:
-        result = analyze_resources(collection)
+        analyze_resources(collection)
 
         mock_logger.warning.assert_not_called()

@@ -1,5 +1,4 @@
 import json
-import pytest
 from unittest.mock import patch, mock_open
 from aws_scanner.engines.s3.resource_file_s3_collector import ResourceFileS3Collector
 from aws_scanner.engines.common.resource_definition import ResourceCollection
