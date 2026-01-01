@@ -14,11 +14,19 @@ All code changes follow TDD:
 
 ```bash
 # First: commit tests
-git commit -m "tests: <feature description>"
+git commit -m "<concise one-line description>"
 
 # Then: commit implementation
-git commit -m "feat: <feature description>"
+git commit -m "<concise one-line description>"
 ```
+
+**Commit message rules:**
+- One line only, no body text
+- No prefixes like "feat:", "tests:", "fix:", etc.
+- Start with imperative verb (add, remove, fix, update)
+- Keep under 72 characters
+- Example: "add tests for CloudFormation BucketPolicy removal"
+- Example: "remove BucketPolicy resources after extraction"
 
 **Why separate commits:**
 - Enables reverting implementation while keeping tests
