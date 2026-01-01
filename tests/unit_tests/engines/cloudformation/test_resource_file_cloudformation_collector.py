@@ -147,16 +147,16 @@ Resources:
             Action: 's3:GetObject'
             Resource: 'arn:aws:s3:::test-bucket/*'
 """)
-    
+
     collector = ResourceFileCloudFormationCollector(str(template_file))
     collection = collector.collect()
-    
+
     assert "MyBucket" in collection.resources
-    assert "MyBucketPolicy" in collection.resources
-    
+    assert "MyBucketPolicy" not in collection.resources
+
     policy_resources = [r for r in collection.resources.values() if r.resource_type == "AWS::IAM::Policy"]
     assert len(policy_resources) == 1
-    
+
     policy = policy_resources[0]
     assert "PolicyDocument" in policy.properties
     assert policy.properties["PolicyDocument"]["Statement"][0]["Principal"] == "*"
@@ -240,11 +240,51 @@ Resources:
     assert "MyRole" in collection.resources
 
 
+def test_s3_bucket_policy_removed_after_extraction(tmp_path):
+    template_file = tmp_path / "template.yaml"
+    template_file.write_text("""
+Resources:
+  MyBucket:
+    Type: AWS::S3::Bucket
+    Properties:
+      BucketName: test-bucket
+  MyBucketPolicy:
+    Type: AWS::S3::BucketPolicy
+    Properties:
+      Bucket: !Ref MyBucket
+      PolicyDocument:
+        Version: '2012-10-17'
+        Statement:
+          - Effect: Allow
+            Principal: '*'
+            Action: 's3:GetObject'
+            Resource: 'arn:aws:s3:::test-bucket/*'
+""")
+
+    collector = ResourceFileCloudFormationCollector(str(template_file))
+    collection = collector.collect()
+
+    bucket_policy_resources = [r for r in collection.resources.values() if r.resource_type == "AWS::S3::BucketPolicy"]
+    assert len(bucket_policy_resources) == 0
+
+    iam_policy_resources = [r for r in collection.resources.values() if r.resource_type == "AWS::IAM::Policy"]
+    assert len(iam_policy_resources) == 1
+
+
+def test_vulnerable_stack_has_no_bucket_policy_resources():
+    collector = ResourceFileCloudFormationCollector("examples/cloudformation/vulnerable_stack.yaml")
+
+    collection = collector.collect()
+
+    bucket_policy_resources = [r for r in collection.resources.values() if r.resource_type == "AWS::S3::BucketPolicy"]
+    assert len(bucket_policy_resources) == 0
+
+
 def test_backward_compatibility_with_existing_examples():
     collector = ResourceFileCloudFormationCollector("examples/cloudformation/vulnerable_stack.yaml")
-    
+
     collection = collector.collect()
-    
+
     assert len(collection.resources) > 0
     resource_types = {r.resource_type for r in collection.resources.values()}
     assert "AWS::IAM::Role" in resource_types or "AWS::S3::Bucket" in resource_types or "AWS::EC2::SecurityGroup" in resource_types
