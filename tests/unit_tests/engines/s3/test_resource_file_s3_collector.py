@@ -90,58 +90,6 @@ def test_bucket_properties():
         assert bucket_def.properties["PublicAccessBlockConfiguration"] == test_data["test-bucket"]["public_access_block"]
 
 
-@pytest.mark.skip(reason="File collector no longer creates separate BucketPolicy resources")
-def test_bucket_policy_becomes_separate_resource_definition():
-    test_data = {
-        "test-bucket": {
-            "acl_grants": [],
-            "policy": {
-                "Version": "2012-10-17",
-                "Statement": [
-                    {
-                        "Effect": "Allow",
-                        "Principal": "*",
-                        "Action": "s3:GetObject",
-                        "Resource": "arn:aws:s3:::test-bucket/*"
-                    }
-                ]
-            },
-            "public_access_block": None
-        }
-    }
-
-    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
-        collector = ResourceFileS3Collector("test_file.json")
-        result = collector.collect()
-
-        policy_def = result.get_by_id("test-bucket-bucket-policy")
-        assert policy_def is not None
-        assert policy_def.resource_type == "AWS::S3::BucketPolicy"
-        assert policy_def.properties["PolicyDocument"] == test_data["test-bucket"]["policy"]
-
-
-@pytest.mark.skip(reason="File collector no longer creates bucket references")
-def test_bucket_references_policy():
-    test_data = {
-        "test-bucket": {
-            "acl_grants": [],
-            "policy": {
-                "Version": "2012-10-17",
-                "Statement": []
-            },
-            "public_access_block": None
-        }
-    }
-
-    with patch("builtins.open", mock_open(read_data=json.dumps(test_data))):
-        collector = ResourceFileS3Collector("test_file.json")
-        result = collector.collect()
-
-        bucket_def = result.get_by_id("test-bucket")
-        assert len(bucket_def.references) == 1
-        assert bucket_def.references[0].target_logical_id == "test-bucket-bucket-policy"
-
-
 def test_multiple_buckets():
     test_data = {
         "bucket-1": {
