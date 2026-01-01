@@ -35,6 +35,10 @@
       {
         "command": "aws-scanner.scanSecurityGroup",
         "title": "AWS Scanner: Scan Security Group"
+      },
+      {
+        "command": "aws-scanner.scanCloudFormation",
+        "title": "AWS Scanner: Scan CloudFormation Template"
       }
     ],
     "configuration": {

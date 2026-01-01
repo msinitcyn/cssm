@@ -46,23 +46,23 @@ class ResourceFileCloudFormationCollector:
     
     def _extract_bucket_policies(self, collection: ResourceCollection) -> None:
         bucket_policies = [r for r in collection.resources.values() if r.resource_type == "AWS::S3::BucketPolicy"]
-        
+
         for policy_resource in bucket_policies:
             policy_doc = policy_resource.properties.get("PolicyDocument", {})
             bucket_ref = policy_resource.properties.get("Bucket", "")
-            
+
             if policy_doc:
                 bucket_logical_id = bucket_ref
                 if isinstance(bucket_ref, dict) and "Ref" in bucket_ref:
                     bucket_logical_id = bucket_ref["Ref"]
-                
+
                 target_bucket = collection.resources.get(bucket_logical_id)
                 if target_bucket:
                     bucket_name = target_bucket.properties.get("BucketName", bucket_logical_id)
                     target_bucket.properties["Policy"] = policy_doc
                 else:
                     bucket_name = bucket_ref if isinstance(bucket_ref, str) else bucket_logical_id
-                
+
                 policy_as_iam_resource = ResourceDefinition(
                     logical_id=f"{policy_resource.logical_id}-AsPolicy",
                     resource_type="AWS::IAM::Policy",
@@ -73,3 +73,7 @@ class ResourceFileCloudFormationCollector:
                     }
                 )
                 collection.add_resource(policy_as_iam_resource)
+
+        for policy_resource in bucket_policies:
+            if policy_resource.logical_id in collection.resources:
+                del collection.resources[policy_resource.logical_id]
