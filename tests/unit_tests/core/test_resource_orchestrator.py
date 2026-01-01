@@ -239,3 +239,15 @@ def test_analyze_resources_routes_managed_policy(iam_policy_resource):
 
         mock_analyze.assert_called_once_with(iam_policy_resource)
         assert len(result) == 1
+
+
+def test_cloudformation_with_bucket_policy_produces_no_warnings():
+    from aws_scanner.engines.cloudformation.resource_file_cloudformation_collector import ResourceFileCloudFormationCollector
+
+    collector = ResourceFileCloudFormationCollector("examples/cloudformation/vulnerable_stack.yaml")
+    collection = collector.collect()
+
+    with patch('aws_scanner.core.resource_orchestrator.logger') as mock_logger:
+        result = analyze_resources(collection)
+
+        mock_logger.warning.assert_not_called()
