@@ -1,33 +1,30 @@
+# Python
 __pycache__/
 *.py[cod]
 *.egg-info/
 *.egg
 .python-version
-
-.venv/
 venv/
-env/
 
-.aws/
-credentials
-*.pem
-
+# Testing
 .coverage
 .pytest_cache/
 
-.vscode/
-.idea/
-
-.DS_Store
-
-output/
-input/
-.qodo
-
-.env
-
-aws_scanner_cli.py
-vscode-extension/bin/
+# Build
 dist/
 build/
 *.spec
+
+# IDEs
+.vscode/
+.idea/
+
+# OS
+.DS_Store
+
+# Project specific
+output/
+vscode-extension/bin/
+
+# Environment
+.env
