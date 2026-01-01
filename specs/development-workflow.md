@@ -54,6 +54,13 @@ Specs contain ONLY functionality information:
 - Stage 3 (Tests): Write tests for error handling
 - Stage 4 (Implementation): Implement error handling
 
+## Code Style
+
+- No emojis in code (strings, comments, or anywhere)
+- No comments in code (except where logic is genuinely non-obvious)
+- Simple, clear variable and function names
+- Imperative function names (verbs)
+
 ## Defaults
 
 - 100% backward compatibility (unless breaking change documented with migration guide)
