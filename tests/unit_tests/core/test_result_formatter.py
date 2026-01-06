@@ -61,6 +61,7 @@ def test_format_results_handles_empty_findings():
 
     assert results == {
         "iam_roles": [],
+        "iam_policies": [],
         "s3_buckets": [],
         "security_groups": []
     }
@@ -81,15 +82,16 @@ def test_format_results_handles_unknown_entity_types():
 
 def test_format_results_handles_iam_policy_type():
     findings = [
-        {"entity_type": "iam_policy", "entity_name": "policy1", "vulnerability": "WILDCARD_ACTION"},
+        {"entity_type": "iam_policy", "entity_name": "policy1", "entity_arn": "arn:aws:iam::123456789012:policy/policy1", "vulnerability": "WILDCARD_ACTION"},
     ]
 
     results = format_results(findings)
 
-    assert len(results["iam_roles"]) == 1
-    role_result = results["iam_roles"][0]
-    assert role_result["role_name"] == "policy1"
-    assert len(role_result["vulnerabilities"]) == 1
+    assert len(results["iam_policies"]) == 1
+    policy_result = results["iam_policies"][0]
+    assert policy_result["policy_name"] == "policy1"
+    assert policy_result["policy_arn"] == "arn:aws:iam::123456789012:policy/policy1"
+    assert len(policy_result["vulnerabilities"]) == 1
 
 
 def test_format_results_with_s3_buckets():
