@@ -34,3 +34,29 @@ def test_scanner_handles_malformed_json():
 
     finally:
         Path(malformed_file).unlink()
+
+
+def test_scanner_handles_nonexistent_file():
+    nonexistent_file = "/tmp/this_file_does_not_exist_12345.json"
+
+    cmd = [
+        sys.executable, "-m", "aws_scanner.cli.main",
+        "s3",
+        "--file", nonexistent_file
+    ]
+
+    result = subprocess.run(
+        cmd,
+        capture_output=True,
+        text=True
+    )
+
+    assert result.returncode == 0, f"Expected exit code 0, got {result.returncode}"
+
+    output = json.loads(result.stdout)
+
+    assert "errors" in output or "error" in str(output), "Expected error message in output"
+    assert nonexistent_file in result.stdout, f"Expected file path '{nonexistent_file}' in error message"
+
+    assert "Traceback" not in result.stdout, "Stack trace should not appear in stdout"
+    assert "Traceback" not in result.stderr, "Stack trace should not appear in stderr"
