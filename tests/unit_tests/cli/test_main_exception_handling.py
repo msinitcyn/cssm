@@ -1,6 +1,4 @@
 import json
-import sys
-from io import StringIO
 from unittest import mock
 from aws_scanner.cli.main import main
 
