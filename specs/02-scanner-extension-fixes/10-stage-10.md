@@ -4,17 +4,17 @@
 
 #### Checklist
 
-[ ] Add iam_policies key to result structure
+[x] Add iam_policies key to result structure
   - File: `src/aws_scanner/core/result_formatter.py:6-10`
   - Add `"iam_policies": []` to results dict
 
-[ ] Route IAM policy findings to correct key
+[x] Route IAM policy findings to correct key
   - File: `src/aws_scanner/core/result_formatter.py:18-23`
   - Separate `iam_role` and `iam_policy` routing
   - Put policy findings in `iam_policies`
   - Put role findings in `iam_roles`
 
-[ ] Format IAM policy results
+[x] Format IAM policy results
   - File: `src/aws_scanner/core/result_formatter.py:25-41`
   - Add `iam_policies` branch in formatting loop
   - Use `policy_name` and `policy_arn` fields

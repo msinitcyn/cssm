@@ -59,17 +59,21 @@ def test_cloudformation_scanning():
 
         # Verify structure contains expected sections
         assert "iam_roles" in scan_results, "Results should contain 'iam_roles' section"
+        assert "iam_policies" in scan_results, "Results should contain 'iam_policies' section"
         assert "s3_buckets" in scan_results, "Results should contain 's3_buckets' section"
         assert "security_groups" in scan_results, "Results should contain 'security_groups' section"
 
-        # Verify IAM Policy vulnerabilities detected
+        # Verify IAM Policy vulnerabilities detected (can be in either iam_roles or iam_policies)
         iam_roles = scan_results["iam_roles"]
-        assert len(iam_roles) > 0, "Should detect at least one IAM policy"
+        iam_policies = scan_results["iam_policies"]
+        assert len(iam_roles) + len(iam_policies) > 0, "Should detect at least one IAM role or policy"
 
-        # Check for wildcard permission vulnerabilities in any detected policy
+        # Check for wildcard permission vulnerabilities in any detected role or policy
         all_iam_vulnerabilities = []
         for role in iam_roles:
             all_iam_vulnerabilities.extend(role.get("vulnerabilities", []))
+        for policy in iam_policies:
+            all_iam_vulnerabilities.extend(policy.get("vulnerabilities", []))
 
         assert len(all_iam_vulnerabilities) > 0, "Should have IAM policy vulnerabilities"
 

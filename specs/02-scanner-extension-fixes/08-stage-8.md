@@ -4,23 +4,23 @@
 
 #### Checklist
 
-[ ] Add exception boundary in CLI main function
+[x] Add exception boundary in CLI main function
   - File: `src/aws_scanner/cli/main.py`
   - Wrap main logic in try-except
   - Catch all Exception types
 
-[ ] Return JSON on exception
+[x] Return JSON on exception
   - Create error response structure
   - Include error message
   - Include error type
   - Maintain same output format as success
 
-[ ] Always exit with code 0
+[x] Always exit with code 0
   - Data errors return exit 0
   - Only execution failures (if any) return non-zero
   - Remove any sys.exit(1) calls for data errors
 
-[ ] Log stack trace internally
+[x] Log stack trace internally
   - Use logging module for debugging
   - Don't show stack trace to user
   - Include in debug mode if needed

@@ -4,23 +4,23 @@
 
 #### Checklist
 
-[ ] Remove getResultKey and getItemName functions
+[x] Remove getResultKey and getItemName functions
   - File: `vscode-extension/src/extension.ts:236-256`
   - Functions no longer needed
   - All scanners use unified display logic
 
-[ ] Update displayResults to show all sections
+[x] Update displayResults to show all sections
   - File: `vscode-extension/src/extension.ts:142-184`
   - Loop through all sections: iam_roles, iam_policies, s3_buckets, security_groups
   - Display each section that has items
   - Similar logic to displayCloudFormationResults
 
-[ ] Update scanCurrentFile to use new display
+[x] Update scanCurrentFile to use new display
   - File: `vscode-extension/src/extension.ts:75`
   - Call displayResults without scanType parameter
   - Remove extraFlag parameter
 
-[ ] Unify display functions (optional)
+[x] Unify display functions (optional)
   - Rename displayCloudFormationResults to displayAllResults
   - Use same function for all scan commands
   - Consistent output format
