@@ -49,6 +49,7 @@
 ## Milestone 9: High Impact Foundation
 [x] CloudFormation support (Scanner)<br>
 [x] Scanner & Extension reliability fixes (Both)<br>
+[ ] Result-oriented architecture (Scanner)<br>
 [ ] Release pipeline automation (Extension)<br>
 [ ] Auto-detect configuration type (Extension)<br>
 
@@ -155,6 +156,9 @@ Parse and analyze CloudFormation templates (YAML/JSON) for security misconfigura
 
 ### Scanner & Extension reliability fixes
 Fix scanner error handling and extension compatibility issues. Ensure graceful error messages, proper file format handling, and extension works with all example files.
+
+### Result-oriented architecture
+Transform scanner from exception-based to result-oriented architecture. Return comprehensive status objects with success/failure, error details, warnings, and location metadata (line numbers, property paths). Enable batch scanning, graceful error handling at every stage, and rich context for UI highlighting. Supports future multi-file analysis and graph-based detection.
 
 ### Release pipeline automation
 Set up automated build and publishing pipeline for the VSCode extension using GitHub Actions and marketplace integration.
