@@ -91,7 +91,7 @@ def validate_results(example: Example, scanner_output):
         raise AssertionError(f"Scanner output should be a dict, got {type(scanner_output)}")
 
     if example.service == "iam" and example.entity_type == "policies":
-        result_key = 'iam_roles'
+        result_key = 'iam_policies'
     elif example.service == "s3" and example.entity_type == "":
         result_key = 's3_buckets'
     elif example.service == "sg" and example.entity_type == "":
@@ -110,6 +110,12 @@ def validate_results(example: Example, scanner_output):
         raise AssertionError(f"{result_key} is empty - no results found")
 
     result = results[0]
+
+    if example.service == "iam" and example.entity_type == "policies":
+        if 'policy_name' not in result:
+            raise AssertionError(f"IAM policy result missing 'policy_name' field. Available fields: {list(result.keys())}")
+        if 'policy_arn' not in result:
+            raise AssertionError(f"IAM policy result missing 'policy_arn' field. Available fields: {list(result.keys())}")
 
     if 'vulnerabilities' not in result:
         raise AssertionError(f"Result missing 'vulnerabilities' field. Available fields: {list(result.keys())}")
