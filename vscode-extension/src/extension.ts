@@ -72,7 +72,7 @@ async function scanCurrentFile(scanType: string, extraFlag?: string) {
         try {
             const fs = require('fs');
             const results = JSON.parse(fs.readFileSync('/tmp/vscode-scan-result.json', 'utf8'));
-            displayResults(results, scanType, extraFlag);
+            displayAllResults(results);
         } catch (parseError) {
             outputChannel.appendLine('Scan completed successfully');
             if (stdout) {
@@ -125,7 +125,7 @@ async function scanCloudFormationFile() {
         try {
             const fs = require('fs');
             const results = JSON.parse(fs.readFileSync('/tmp/vscode-scan-result.json', 'utf8'));
-            displayCloudFormationResults(results);
+            displayAllResults(results);
         } catch (parseError) {
             outputChannel.appendLine('Scan completed successfully');
             if (stdout) {
@@ -139,55 +139,12 @@ async function scanCloudFormationFile() {
     }
 }
 
-function displayResults(results: any, scanType: string, extraFlag?: string) {
-    const resultKey = getResultKey(scanType, extraFlag);
-    const items = results[resultKey] || [];
-
-    if (items.length === 0) {
-        outputChannel.appendLine('No items found to scan');
-        return;
-    }
-
-    outputChannel.appendLine(`Scan Results (${items.length} item(s)):`);
-    outputChannel.appendLine('='.repeat(50));
-
-    items.forEach((item: any, index: number) => {
-        outputChannel.appendLine(`\n${index + 1}. ${getItemName(item, scanType)}`);
-
-        if (item.error) {
-            outputChannel.appendLine(`   Error: ${item.error}`);
-            return;
-        }
-
-        const vulnerabilities = item.vulnerabilities || [];
-
-        if (vulnerabilities.length === 0) {
-            outputChannel.appendLine('   No security issues found');
-            return;
-        }
-
-        outputChannel.appendLine(`   Found ${vulnerabilities.length} security issue(s):`);
-
-        vulnerabilities.forEach((vuln: any, vulnIndex: number) => {
-            const severity = vuln.severity?.toUpperCase() || 'UNKNOWN';
-
-            outputChannel.appendLine(`   ${vulnIndex + 1}. [${severity}] ${vuln.description}`);
-
-            if (vuln.remediation) {
-                outputChannel.appendLine(`      Fix: ${vuln.remediation}`);
-            }
-        });
-    });
-
-    outputChannel.appendLine('\n' + '='.repeat(50));
-    outputChannel.appendLine('Scan completed');
-}
-
-function displayCloudFormationResults(results: any) {
+function displayAllResults(results: any) {
     const sections = [
-        { key: 'iam_roles', label: 'IAM Roles', getName: (item: any) => item.role_name || 'Unknown Role' },
-        { key: 's3_buckets', label: 'S3 Buckets', getName: (item: any) => item.bucket_name || 'Unknown Bucket' },
-        { key: 'security_groups', label: 'Security Groups', getName: (item: any) => `${item.group_id} (${item.group_name})` || 'Unknown Security Group' }
+        { key: 'iam_roles', label: 'IAM Roles', getName: (item: any) => item.role_name || 'Unknown' },
+        { key: 'iam_policies', label: 'IAM Policies', getName: (item: any) => item.policy_name || 'Unknown' },
+        { key: 's3_buckets', label: 'S3 Buckets', getName: (item: any) => item.bucket_name || 'Unknown' },
+        { key: 'security_groups', label: 'Security Groups', getName: (item: any) => item.group_id || 'Unknown' }
     ];
 
     let totalItems = 0;
@@ -202,6 +159,11 @@ function displayCloudFormationResults(results: any) {
 
             items.forEach((item: any, index: number) => {
                 outputChannel.appendLine(`\n${index + 1}. ${section.getName(item)}`);
+
+                if (item.error) {
+                    outputChannel.appendLine(`   Error: ${item.error}`);
+                    return;
+                }
 
                 const vulnerabilities = item.vulnerabilities || [];
                 totalVulnerabilities += vulnerabilities.length;
@@ -226,32 +188,10 @@ function displayCloudFormationResults(results: any) {
     });
 
     if (totalItems === 0) {
-        outputChannel.appendLine('No resources found in CloudFormation template');
+        outputChannel.appendLine('No resources found to scan');
     } else {
         outputChannel.appendLine('\n' + '='.repeat(50));
         outputChannel.appendLine(`Scan completed: ${totalItems} resources, ${totalVulnerabilities} issues found`);
-    }
-}
-
-function getResultKey(scanType: string, extraFlag?: string): string {
-    if (scanType === 'iam' && extraFlag === '--policies') {
-        return 'iam_policies';
-    }
-    
-    switch (scanType) {
-        case 'iam': return 'iam_roles';
-        case 's3': return 's3_buckets';
-        case 'sg': return 'security_groups';
-        default: return 'iam_policies';
-    }
-}
-
-function getItemName(item: any, scanType: string): string {
-    switch (scanType) {
-        case 'iam': return item.role_name || 'Unknown Role';
-        case 's3': return item.bucket_name || 'Unknown Bucket';
-        case 'sg': return `${item.group_id} (${item.group_name})` || 'Unknown Security Group';
-        default: return `${item.policy_name} (${item.policy_arn})` || 'Unknown Policy';
     }
 }
 

@@ -6,34 +6,17 @@ import pytest
 
 
 def test_cloudformation_scanning():
-    """
-    Integration test for CloudFormation template scanning.
-
-    This test scans the vulnerable_stack.yaml CloudFormation template
-    and verifies that vulnerabilities are detected in:
-    - IAM Role (wildcard permissions)
-    - S3 Bucket (public access)
-    - Security Group (open ports)
-
-    Expected to fail until CloudFormation scanning is implemented (TDD approach).
-    """
-
-    # Setup paths
     template_path = Path("examples/cloudformation/vulnerable_stack.yaml")
     output_path = Path("output/cloudformation_test_report.json")
 
-    # Ensure template exists
     if not template_path.exists():
         pytest.fail(f"CloudFormation template not found at {template_path}")
 
-    # Clean up any existing output
     if output_path.exists():
         output_path.unlink()
 
-    # Ensure output directory exists
     output_path.parent.mkdir(parents=True, exist_ok=True)
 
-    # Run the scanner with --cloudformation flag
     cmd = [
         sys.executable, "-m", "aws_scanner.cli.main",
         "--cloudformation", str(template_path),
@@ -49,27 +32,26 @@ def test_cloudformation_scanning():
             check=True
         )
 
-        # Verify output file was created
         if not output_path.exists():
             pytest.fail(f"Output file was not created at {output_path}")
 
-        # Load and parse the results
         with open(output_path, 'r') as f:
             scan_results = json.load(f)
 
-        # Verify structure contains expected sections
         assert "iam_roles" in scan_results, "Results should contain 'iam_roles' section"
+        assert "iam_policies" in scan_results, "Results should contain 'iam_policies' section"
         assert "s3_buckets" in scan_results, "Results should contain 's3_buckets' section"
         assert "security_groups" in scan_results, "Results should contain 'security_groups' section"
 
-        # Verify IAM Policy vulnerabilities detected
         iam_roles = scan_results["iam_roles"]
-        assert len(iam_roles) > 0, "Should detect at least one IAM policy"
+        iam_policies = scan_results["iam_policies"]
+        assert len(iam_roles) + len(iam_policies) > 0, "Should detect at least one IAM role or policy"
 
-        # Check for wildcard permission vulnerabilities in any detected policy
         all_iam_vulnerabilities = []
         for role in iam_roles:
             all_iam_vulnerabilities.extend(role.get("vulnerabilities", []))
+        for policy in iam_policies:
+            all_iam_vulnerabilities.extend(policy.get("vulnerabilities", []))
 
         assert len(all_iam_vulnerabilities) > 0, "Should have IAM policy vulnerabilities"
 
@@ -86,7 +68,6 @@ def test_cloudformation_scanning():
 
         iam_vulnerabilities = all_iam_vulnerabilities
 
-        # Verify S3 Bucket vulnerabilities detected
         s3_buckets = scan_results["s3_buckets"]
         assert len(s3_buckets) > 0, "Should detect at least one S3 bucket"
 
@@ -96,7 +77,6 @@ def test_cloudformation_scanning():
         )
         assert vulnerable_bucket is not None, "Should find VulnerableS3Bucket in results"
 
-        # Check for public access vulnerabilities
         s3_vulnerabilities = vulnerable_bucket.get("vulnerabilities", [])
         assert len(s3_vulnerabilities) > 0, "Vulnerable bucket should have vulnerabilities"
 
@@ -108,7 +88,6 @@ def test_cloudformation_scanning():
         missing_s3_vulns = expected_s3_vulns - s3_vuln_ids
         assert not missing_s3_vulns, f"Missing S3 vulnerabilities: {missing_s3_vulns}"
 
-        # Verify Security Group vulnerabilities detected
         security_groups = scan_results["security_groups"]
         assert len(security_groups) > 0, "Should detect at least one security group"
 
@@ -118,14 +97,13 @@ def test_cloudformation_scanning():
         )
         assert vulnerable_sg is not None, "Should find VulnerableSecurityGroup in results"
 
-        # Check for open port vulnerabilities
         sg_vulnerabilities = vulnerable_sg.get("vulnerabilities", [])
         assert len(sg_vulnerabilities) > 0, "VulnerableSecurityGroup should have vulnerabilities"
 
         sg_vuln_ids = {vuln["id"] for vuln in sg_vulnerabilities}
         expected_sg_vulns = {
-            "SG_OPEN_MANAGEMENT_PORT",  # SSH and RDP
-            "SG_ALL_PORTS_OPEN_PUBLIC"  # All TCP ports
+            "SG_OPEN_MANAGEMENT_PORT",
+            "SG_ALL_PORTS_OPEN_PUBLIC"
         }
 
         missing_sg_vulns = expected_sg_vulns - sg_vuln_ids
@@ -149,7 +127,6 @@ def test_cloudformation_scanning():
     except FileNotFoundError as e:
         pytest.fail(f"File not found: {e}")
     finally:
-        # Clean up output file
         if output_path.exists():
             output_path.unlink()
 
