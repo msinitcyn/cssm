@@ -17,6 +17,7 @@ def main():
 
         error_response = {
             "iam_roles": [],
+            "iam_policies": [],
             "s3_buckets": [],
             "security_groups": [],
             "errors": [{
